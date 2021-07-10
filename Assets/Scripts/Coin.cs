@@ -1,0 +1,66 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Coin : MonoBehaviour
+{
+    public float speed = 24;
+    public AudioSource sound;
+    public ParticleSystem particle;
+    private bool destroying = false;
+    private float destroyTime;
+    private Transform mesh;
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        particle.Stop();
+        mesh = transform.Find("Cylinder002");
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        Game game = Game.get();
+
+        if (game.paused)
+            return;
+     
+        mesh.Rotate(Vector3.up * speed * Time.deltaTime, Space.World);
+
+        if (destroying)
+        {
+            if (Time.realtimeSinceStartup < destroyTime)
+            {
+                speed += 256.0f * Time.deltaTime;
+            }
+            else
+            {
+                Destroy(this.gameObject);
+            }
+        }
+            
+    }
+
+    void OnTriggerEnter(Collider col)
+    {
+        if (destroying)
+            return;
+
+        if (col.gameObject.tag == "Player")
+        {
+            // Avatar collided but we want main player AI
+            Player player = col.gameObject.GetComponentsInParent<Player>()[0];
+
+            player.AddCoin(1);
+
+            particle.Play();
+            sound.Play();
+
+            mesh.GetComponent<MeshRenderer>().enabled = false;
+
+            destroyTime = Time.realtimeSinceStartup + 5.0f;
+            destroying = true;
+        }
+    }
+}
