@@ -44,14 +44,18 @@ public class Game : MonoBehaviour
         return instance;
     }
 
-    private void SetupAvatar(GameObject P, uint _playerIndex)
+    private void SetupAvatar(GameObject P, uint _padIndex, uint _modelIndex)
     {
         // enable player model
         var avatar = P.transform.Find("Avatar");
-        var playerModel = avatar.Find(playerInfos[_playerIndex].model);
-        var playerName = playerInfos[_playerIndex].name;
+        var playerModel = avatar.Find(playerInfos[_modelIndex].model);
+        var playerName = playerInfos[_modelIndex].name;
 
         P.name = playerName;
+        var player = P.transform.GetComponent<Player>();
+        player.padIndex = _padIndex;
+        player.modelIndex = _modelIndex;
+
         playerModel.gameObject.SetActive(true);
                  
         playerModel.transform.localPosition = new Vector3(0, 0, 0);
@@ -63,7 +67,7 @@ public class Game : MonoBehaviour
         // disable other models in player prefab
         for (int i = 0; i < playerInfos.Length; ++i)
         {
-            if (i != _playerIndex)
+            if (i != _modelIndex)
             {
                 var otherModel = P.transform.Find("Avatar").Find(playerInfos[i].model);
                 if (null != otherModel)
@@ -74,10 +78,24 @@ public class Game : MonoBehaviour
 
         }
 
-        if (_playerIndex == 0)
-            avatar.transform.rotation = Quaternion.LookRotation(new Vector3(0,0,1));
-        else if (_playerIndex == 1)
-            avatar.transform.rotation = Quaternion.LookRotation(new Vector3(0,0,1));
+        switch (_padIndex)
+        {
+            case 0:
+                avatar.transform.rotation = Quaternion.LookRotation(new Vector3(0, 0, 1));
+                break;
+
+            case 1:
+                avatar.transform.rotation = Quaternion.LookRotation(new Vector3(0, 0, 1));
+                break;
+        }
+
+        if (_padIndex == 0xFF)
+        {
+            avatar.transform.rotation = Quaternion.LookRotation(new Vector3(0, 0, -1));
+            player.SetHuman(false);
+        }
+        else
+            player.SetHuman(true);
     }
 
     public void NewGame(uint _playerCount)
@@ -93,10 +111,10 @@ public class Game : MonoBehaviour
         {
             case 1:
                 {
+                    // Human players
                     GameObject P1 = Instantiate(player, new Vector3(0.0f, 0.0f, -8.0f), Quaternion.identity);
-                    P1.transform.GetComponent<Player>().padIndex = 0;
 
-                    SetupAvatar(P1, 0);
+                    SetupAvatar(P1, 0, 0);
 
                     Camera C1 = P1.GetComponentInChildren<Camera>();
                     C1.rect = new Rect(new Vector2(0, 0.0f), new Vector2(1.0f, 1.0f));
@@ -106,17 +124,15 @@ public class Game : MonoBehaviour
             case 2:
                 {
                     GameObject P1 = Instantiate(player, new Vector3(-1.0f, 00.0f, -8.0f), Quaternion.identity);
-                    P1.transform.GetComponent<Player>().padIndex = 0;
 
-                    SetupAvatar(P1, 0);
+                    SetupAvatar(P1, 0, 0);
 
                     Camera C1 = P1.GetComponentInChildren<Camera>();
                     C1.rect = new Rect(new Vector2(0, 0), new Vector2(0.5f, 1));
 
                     GameObject P2 = Instantiate(player, new Vector3(+1.0f, 0.0f, -8.0f), Quaternion.identity);
-                    P2.transform.GetComponent<Player>().padIndex = 1;
 
-                    SetupAvatar(P2, 1);
+                    SetupAvatar(P2, 1, 1);
 
                     Camera C2 = P2.GetComponentInChildren<Camera>();
                     C2.rect =  new Rect(new Vector2(0.5f, 0), new Vector2(0.5f, 1));
@@ -128,6 +144,13 @@ public class Game : MonoBehaviour
                 }
                 break;
         }
+
+        // AI players
+        GameObject E1 = Instantiate(player, new Vector3(-1, 0, 8), Quaternion.identity);
+        SetupAvatar(E1, 0xFF, 2);
+
+        GameObject E2 = Instantiate(player, new Vector3(+1, 0, 8), Quaternion.identity);
+        SetupAvatar(E2, 0xFF, 2);
 
         hideMenu();
     }
@@ -142,7 +165,9 @@ public class Game : MonoBehaviour
     {
         mainMenu.SetActive(true);
 
-        mainMenu.transform.Find("Background").gameObject.SetActive(true);
+        var background = GameObject.Find("Background");
+        if (background)
+            background.gameObject.SetActive(true);
 
         paused = true;
 

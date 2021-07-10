@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -12,6 +13,7 @@ using UnityEngine.UI;
 public class Player : MonoBehaviour
 {
     public uint padIndex = 0;
+    public uint modelIndex = 0;
     public float walkSpeed = 3.0f;
     public float runSpeed = 6.0f;
     public float accelleration = 10.0f;
@@ -19,55 +21,100 @@ public class Player : MonoBehaviour
     public float jump = 1.0f;
     public int lifes = 3;
     public uint coins = 0;
-    public float curSpeed = 0.0f;
+
+    [Header("Debug")]
+    [ReadOnly]
+    public float currentSpeed = 0.0f;
     
     private GameObject avatar;
+    private bool human = false;
     private Vector3 start = new Vector3();
     private Camera playerCam;
     private Vector3 playerCamOffset;
     private CharacterController characterController;
     private bool grounded = true;
     private Vector3 velocity = new Vector3(0, 0, 0);
+    private GameObject postprocess;
     private GameObject hud;
     private Volume postProcess;
     private ColorAdjustments colorAdustments;
     private float targetCamHeight = 0.0f;
     private float currentCamHeight = 0.0f;
+    private float waitUntil = 0.0f;
 
     private Vector2 camLimitsZ = new Vector2(-2.0f, 1.5f);
+
+    public void SetHuman(bool _isHuman)
+    {
+        human = _isHuman;
+    }
+
+    public GameObject Avatar
+    {
+        get {  return avatar; }
+    }
+
+    public bool Human
+    {
+        get { return human; }
+    }
+
+    public bool Dead
+    {
+        get { return lifes < 0; }
+    }
 
     void Start()
     {
         avatar = transform.Find("Avatar").gameObject;
         start = avatar.transform.position;
+
         playerCam = transform.Find("Camera").gameObject.GetComponent<Camera>();
-        playerCamOffset = new Vector3(0, 27, -15);
-        characterController = avatar.GetComponent<CharacterController>();
+        postprocess = transform.Find("PostProcess").gameObject;
         hud = transform.Find("Hud").transform.Find("Canvas").gameObject;
+
+        if (human)
+        {
+            playerCamOffset = new Vector3(0, 27, -15);
+            Vector3 camPos = new Vector3(avatar.transform.position.x + playerCamOffset.x, playerCamOffset.y + currentCamHeight, avatar.transform.position.z + playerCamOffset.z);
+            camPos.x = 0.0f;
+            camPos.z = Mathf.Clamp(camPos.z, playerCamOffset.z + camLimitsZ.x, playerCamOffset.z + camLimitsZ.y);
+            playerCam.transform.position = camPos;
+        }
+        else
+        {
+            Destroy(playerCam.gameObject);
+            Destroy(postprocess);
+            Destroy(hud);
+
+            walkSpeed = 0.25f;
+            runSpeed = 1;
+        }
+
+        characterController = avatar.GetComponent<CharacterController>();
 
         lifes = 3;
         coins = 0;
 
-        Vector3 camPos = new Vector3(avatar.transform.position.x + playerCamOffset.x, playerCamOffset.y + currentCamHeight, avatar.transform.position.z + playerCamOffset.z);
-        camPos.x = 0.0f;
-        camPos.z = Mathf.Clamp(camPos.z, playerCamOffset.z + camLimitsZ.x, playerCamOffset.z + camLimitsZ.y);
-        playerCam.transform.position = camPos;
-
         StartPostProcess();
-
         UpdateUIOnce();
+
+        waitUntil = Time.realtimeSinceStartup + UnityEngine.Random.Range(1.0f, 3.0f);
     }
 
     public void StartPostProcess()
     {
+        if (!human)
+            return;
+
         // Match camera and postprocess layer
         var layerName = "Player " + (padIndex+1).ToString();
         var layerIndex = LayerMask.NameToLayer(layerName);
 
-        transform.Find("PostProcess").gameObject.layer = layerIndex;
+        postprocess.gameObject.layer = layerIndex;
         transform.Find("Camera").GetComponent<UniversalAdditionalCameraData>().volumeLayerMask = 1 << layerIndex;
 
-        postProcess = transform.Find("PostProcess").gameObject.GetComponent<Volume>();
+        postProcess = postprocess.gameObject.GetComponent<Volume>();
 
         for (int i = 0; i<postProcess.profile.components.Count; i++)
         {
@@ -102,8 +149,8 @@ public class Player : MonoBehaviour
     {
         Game game = Game.get();
 
-        hud.transform.Find("Name").GetComponent<Text>().text = game.playerInfos[padIndex].name;
-        hud.transform.Find("Head").GetComponent<RawImage>().texture = game.playerInfos[padIndex].face;
+        hud.transform.Find("Name").GetComponent<Text>().text = game.playerInfos[modelIndex].name;
+        hud.transform.Find("Head").GetComponent<RawImage>().texture = game.playerInfos[modelIndex].face;
 
         UpdateUI();
     }
@@ -112,11 +159,6 @@ public class Player : MonoBehaviour
     {
         hud.transform.Find("Lifes").GetComponent<Text>().text = " x " + math.max(0,lifes).ToString();
         hud.transform.Find("Coins").GetComponent<Text>().text = " x " + coins.ToString();
-    }
-
-    public bool IsDead()
-    {
-        return lifes < 0;
     }
 
     void Update()
@@ -137,30 +179,74 @@ public class Player : MonoBehaviour
             targetCamHeight = hit.point.y;
         }
         currentCamHeight = Mathf.Lerp(currentCamHeight, targetCamHeight, Mathf.Clamp01(Time.deltaTime));
+        
+        Vector2 leftStick = new Vector2(0,0), rightStick = new Vector2(0,0);
+        bool running = false, jumping = false;
 
-        var pads = Gamepad.all;
-
-        if (padIndex >= pads.Count)
+        if (human)
         {
-            velocity.y += game.gravity * Time.deltaTime;
-            characterController.Move(velocity * Time.deltaTime);
-            return;
+            var pads = Gamepad.all;
+
+            if (padIndex < pads.Count)
+            {
+                var pad = pads[(int)padIndex];
+
+                if (pad.startButton.isPressed == true)
+                    game.showMenu();
+
+                leftStick = pad.leftStick.ReadValue();
+                rightStick = pad.rightStick.ReadValue();
+
+                running = pad.buttonSouth.isPressed && grounded;
+                jumping = pad.buttonEast.isPressed && grounded;
+            }
         }
+        else
+        {
+            if (Time.realtimeSinceStartup < waitUntil)
+                return;
 
-        var pad = pads[(int)padIndex];
+            var players = GameObject.FindGameObjectsWithTag("Player");
 
-        if (pad.startButton.isPressed == true)
-            game.showMenu();
+            float minDist = 99999.99f;
 
-        var leftStick = pad.leftStick.ReadValue();
-        var rightStick = pad.rightStick.ReadValue();
+            Player found = null;
+
+            foreach (var go in players)
+            {
+                var player = go.GetComponent<Player>();
+
+                if (player.Human)
+                {
+                    GameObject avatar = player.Avatar;
+
+                    float dist = math.distance(avatar.transform.position, Avatar.transform.position);
+
+                    if (dist < minDist)
+                    {
+                        minDist = dist;
+                        found = player;
+                    }
+                }
+            }
+
+            if (found != null)
+            {
+                Vector3 delta = found.Avatar.transform.position - Avatar.transform.position;
+
+                leftStick.x = delta.x;
+                leftStick.y = delta.z;
+
+                leftStick.Normalize();
+            }
+        }
 
         if (Mathf.Abs(leftStick.x) < 0.01f)
             leftStick.x = 0.0f;
         if (Mathf.Abs(leftStick.y) < 0.01f)
             leftStick.y = 0.0f;
 
-        if (IsDead())
+        if (Dead)
         {
             leftStick = new Vector2(0, 0);
             rightStick = new Vector2(0, 0);
@@ -168,9 +254,7 @@ public class Player : MonoBehaviour
         }
 
         Vector3 dir = new Vector3(leftStick.x, 0.0f, leftStick.y).normalized;
-
-        bool running = pad.buttonSouth.isPressed && grounded;
-
+        
         float speed = running ? runSpeed : walkSpeed;
         float accel = running ? accelleration * 2.0f : accelleration;
 
@@ -180,7 +264,7 @@ public class Player : MonoBehaviour
         velocity.x *= Mathf.Clamp01(1.0f - friction * Time.deltaTime);
         velocity.z *= Mathf.Clamp01(1.0f - friction * Time.deltaTime);
 
-        if (pad.buttonEast.isPressed && grounded)
+        if (jumping)
             velocity.y -= jump * game.gravity;
 
         velocity.y += game.gravity * Time.deltaTime;
@@ -198,30 +282,36 @@ public class Player : MonoBehaviour
 
         if (dir != Vector3.zero)
             avatar.transform.rotation = Quaternion.LookRotation(dir);
+        
+        if (playerCam != null)
+        {
+            Vector3 camPos = new Vector3(avatar.transform.position.x + playerCamOffset.x, playerCamOffset.y + currentCamHeight, avatar.transform.position.z + playerCamOffset.z);
 
-        Vector3 camPos = new Vector3(avatar.transform.position.x + playerCamOffset.x, playerCamOffset.y + currentCamHeight, avatar.transform.position.z + playerCamOffset.z);
+            camPos.x = 0.0f;
+            camPos.z = Mathf.Clamp(camPos.z, playerCamOffset.z + camLimitsZ.x, playerCamOffset.z + camLimitsZ.y);
 
-        camPos.x = 0.0f;
-        camPos.z = Mathf.Clamp(camPos.z, playerCamOffset.z + camLimitsZ.x, playerCamOffset.z + camLimitsZ.y);
+            playerCam.transform.position = camPos;
+        }
 
-        playerCam.transform.position = camPos;
-
-        if (!IsDead())
+        if (!Dead)
         {
             if (avatar.transform.position.y < -10)
                 Die();
         }
 
-        curSpeed = Mathf.Sqrt(velocity.x*velocity.x + velocity.z * velocity.z);
+        currentSpeed = Mathf.Sqrt(velocity.x*velocity.x + velocity.z * velocity.z);
 
-        var model = avatar.gameObject.transform.Find(game.playerInfos[padIndex].model);
+        var model = avatar.gameObject.transform.Find(game.playerInfos[modelIndex].model);
         var anim = model.GetComponent<Animator>();
         if (anim)
         {
-            anim.SetFloat("Speed", curSpeed);
+            anim.SetFloat("Speed", currentSpeed);
         }
 
-        UpdateUI();        
+        if (Human)
+        {
+            UpdateUI();
+        }
     }
 
     public void AddCoin(uint _count)

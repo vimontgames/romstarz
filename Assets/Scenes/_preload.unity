@@ -945,6 +945,9 @@ MonoBehaviour:
   - name: Pablo
     face: {fileID: 2800000, guid: 0731f8a3eb548f9449e14e5cb0e48e4b, type: 3}
     model: Pablo
+  - name: Zombie
+    face: {fileID: 0}
+    model: Zombie
   player: {fileID: 721336283044569467, guid: 8873ac81246c22740b83add2ae33cf16, type: 3}
   menu: {fileID: 994154391}
 --- !u!1 &1763347353
@@ -999,7 +1002,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Navigation:
-    m_Mode: 3
+    m_Mode: 2
     m_WrapAround: 0
     m_SelectOnUp: {fileID: 0}
     m_SelectOnDown: {fileID: 0}

@@ -47,7 +47,7 @@ public class Coin : MonoBehaviour
         if (destroying)
             return;
 
-        if (col.gameObject.tag == "Player")
+        if (col.gameObject.tag == "Avatar")
         {
             // Avatar collided but we want main player AI
             Player player = col.gameObject.GetComponentsInParent<Player>()[0];
