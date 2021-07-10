@@ -1,5 +1,3 @@
 # RomStarz
-The Vimont brothers are back in a brawler game.
+The Vimont brothers are back!
 ![Screenshot](Docs/Screenshots/0.jpg)
-
-![Screenshot](Docs/Screenshots/1.jpg)
