@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 2630929308343015801}
   - component: {fileID: 2337461820674875870}
   - component: {fileID: 751809087889088132}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Name
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -90,7 +90,7 @@ GameObject:
   - component: {fileID: 3805547139416252970}
   - component: {fileID: 285870954672273483}
   - component: {fileID: 6058730220641758738}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Head
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -388,7 +388,7 @@ GameObject:
   - component: {fileID: 5983782111911663235}
   - component: {fileID: 5334334107175362038}
   - component: {fileID: 2679070112139592442}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Hud
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -573,7 +573,7 @@ GameObject:
   - component: {fileID: 5740141589065034458}
   - component: {fileID: 457661930883041733}
   - component: {fileID: 8506218180279001212}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Lifes
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -653,7 +653,7 @@ GameObject:
   - component: {fileID: 8087331247097784197}
   - component: {fileID: 628936019110104067}
   - component: {fileID: 743891053568182328}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -756,7 +756,7 @@ GameObject:
   - component: {fileID: 6248957280956635942}
   - component: {fileID: 7187980025074096132}
   - component: {fileID: 6845819844255287245}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Coins
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -835,7 +835,7 @@ GameObject:
   - component: {fileID: 2398049575303099838}
   - component: {fileID: 4873570681462248553}
   - component: {fileID: 3864555240840225227}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Euro
   m_TagString: Untagged
   m_Icon: {fileID: 0}
