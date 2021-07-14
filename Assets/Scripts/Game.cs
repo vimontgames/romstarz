@@ -6,10 +6,18 @@ using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 
 [Serializable]
-public class PlayerInfo
+public class CharacterInfo
 {
     public string name;
     public Texture face;
+    public string model;
+}
+
+[Serializable]
+public class WeaponInfo
+{
+    public string name;
+    public Texture icon;
     public string model;
 }
 
@@ -17,13 +25,37 @@ public class Game : MonoBehaviour
 {
     public float gravity = -9.81f;
     public bool paused = true;
-    public PlayerInfo[] playerInfos = new PlayerInfo[2];
+    public CharacterInfo[] characters = new CharacterInfo[0];
+    public WeaponInfo[] weapons = new WeaponInfo[0];
     public GameObject player;
     public GameObject menu;
 
     private static Game instance;
     private GameObject mainMenu;
     private Transform players;
+
+    public static Game Instance
+    {
+        get
+        {
+            if (instance == null)
+            {
+                instance = GameObject.Find("Game").GetComponent<Game>();
+            }
+
+            return instance;
+        }
+    }
+
+    public CharacterInfo[] Characters
+    {
+        get { return characters; }
+    }
+
+    public WeaponInfo[] Weapons
+    {
+        get { return weapons; }
+    }
 
     // Start is called before the first frame update
     void Start()
@@ -33,30 +65,20 @@ public class Game : MonoBehaviour
         mainMenu = menu.transform.Find("Main").gameObject;
         mainMenu.SetActive(true);
     }
-
-    public static Game get()
-    {
-        if (instance == null)
-        {
-            instance = GameObject.Find("Game").GetComponent<Game>();
-        }
-
-        return instance;
-    }
-
+   
     private void SetupAvatar(GameObject P, uint _padIndex, uint _modelIndex)
     {
         // enable player model
         var avatar = P.transform.Find("Avatar");
-        var playerModel = avatar.Find(playerInfos[_modelIndex].model);
-        var playerName = playerInfos[_modelIndex].name;
+        var playerModel = avatar.Find(characters[_modelIndex].model);
+        var playerName = characters[_modelIndex].name;
 
         P.name = playerName;
-        var player = P.transform.GetComponent<Player>();
+        var player = P.transform.GetComponent<Character>();
         player.padIndex = _padIndex;
         player.modelIndex = _modelIndex;
 
-        playerModel.gameObject.SetActive(true);
+        playerModel.gameObject.SetActive(true); 
                  
         playerModel.transform.localPosition = new Vector3(0, 0, 0);
         
@@ -65,14 +87,14 @@ public class Game : MonoBehaviour
         animator.avatar = (Avatar)Instantiate(playerModel.GetComponent<Animator>().avatar);
 
         // disable other models in player prefab
-        for (int i = 0; i < playerInfos.Length; ++i)
+        for (int i = 0; i < characters.Length; ++i)
         {
             if (i != _modelIndex)
             {
-                var otherModel = P.transform.Find("Avatar").Find(playerInfos[i].model);
+                var otherModel = P.transform.Find("Avatar").Find(characters[i].model);
                 if (null != otherModel)
                 {
-                    otherModel.gameObject.SetActive(false);
+                    Destroy(otherModel.gameObject);
                 }
             }
 

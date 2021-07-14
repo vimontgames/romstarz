@@ -21,7 +21,7 @@ public class Coin : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        Game game = Game.get();
+        Game game = Game.Instance;
 
         if (game.paused)
             return;
@@ -50,7 +50,7 @@ public class Coin : MonoBehaviour
         if (col.gameObject.tag == "Avatar")
         {
             // Avatar collided but we want main player AI
-            Player player = col.gameObject.GetComponentsInParent<Player>()[0];
+            Character player = col.gameObject.GetComponentsInParent<Character>()[0];
 
             player.AddCoin(1);
 

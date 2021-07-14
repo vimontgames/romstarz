@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.17276807, g: 0.21589197, b: 0.29782572, a: 1}
+  m_IndirectSpecularColor: {r: 0.12731713, g: 0.13414736, b: 0.12107852, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -181,7 +181,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
+    m_Font: {fileID: 12800000, guid: c3339f233b03d5f46bf49cc2401b146e, type: 3}
     m_FontSize: 48
     m_FontStyle: 1
     m_BestFit: 0
@@ -550,7 +550,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 566.5, y: -27.242}
+  m_AnchoredPosition: {x: 591, y: 31}
   m_SizeDelta: {x: 108.9914, y: 54.484}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &806598462
@@ -574,7 +574,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
+    m_Font: {fileID: 12800000, guid: c3339f233b03d5f46bf49cc2401b146e, type: 3}
     m_FontSize: 32
     m_FontStyle: 0
     m_BestFit: 0
@@ -938,7 +938,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gravity: -9.81
   paused: 1
-  playerInfos:
+  characters:
   - name: "Rom\xE9o"
     face: {fileID: 2800000, guid: 9e00837adb585a44e876bc19dbedd4df, type: 3}
     model: Romeo
@@ -948,6 +948,13 @@ MonoBehaviour:
   - name: Zombie
     face: {fileID: 0}
     model: Zombie
+  weapons:
+  - name: Racket
+    icon: {fileID: 0}
+    model: Racket
+  - name: Sword
+    icon: {fileID: 0}
+    model: Sword
   player: {fileID: 721336283044569467, guid: 8873ac81246c22740b83add2ae33cf16, type: 3}
   menu: {fileID: 994154391}
 --- !u!1 &1763347353
@@ -1141,7 +1148,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
+    m_Font: {fileID: 12800000, guid: c3339f233b03d5f46bf49cc2401b146e, type: 3}
     m_FontSize: 48
     m_FontStyle: 1
     m_BestFit: 0
