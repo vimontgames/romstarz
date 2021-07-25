@@ -19,6 +19,8 @@ public class WeaponInfo
     public string name;
     public Texture icon;
     public string model;
+    public string coloured;
+    public List<Color> colors;
 }
 
 public class Game : MonoBehaviour

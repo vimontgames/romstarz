@@ -12,7 +12,15 @@ public enum WeaponType
 public class Weapon : MonoBehaviour
 {
     public WeaponType weaponType = WeaponType.Racket;
-    private bool available = true;
+    public float timeBeforePick = 3.0f;
+
+    [Header("Sound")]
+    public AudioSource pickSound;
+    public AudioSource dropSound;
+
+    private bool dropped = true;
+    private float nextPickTime = 0.0f;
+    private GameObject owner = null;
 
     // Start is called before the first frame update
     void Start()
@@ -27,6 +35,17 @@ public class Weapon : MonoBehaviour
             if (info != null && child.gameObject.name == info.model)
             {
                 child.gameObject.SetActive(true);
+
+                // random color
+                if (info.colors.Count > 0)
+                {
+                    var colorPart = child.gameObject.transform.Find(info.coloured);
+                    if (colorPart != null)
+                    {
+                        var mat = colorPart.GetComponent<Renderer>().material;
+                        mat.color = info.colors[Random.Range(0, info.colors.Count - 1)];
+                    }
+                }
             }
             else
             {
@@ -61,14 +80,16 @@ public class Weapon : MonoBehaviour
         }
     }
 
-    void OnTriggerEnter(Collider col)
+    void OnCollisionEnter(Collision collision)
     {
-        if (col.gameObject.tag == "Avatar")
+        foreach (ContactPoint contact in collision.contacts)
         {
-            Character player = col.gameObject.GetComponentsInParent<Character>()[0];
+            var obj = contact.otherCollider.gameObject;
 
-            if (available)
+            if (obj.tag == "Avatar")
             {
+                Character player = obj.GetComponentsInParent<Character>()[0];
+
                 if (player.RightHand)
                 {
                     transform.parent = player.RightHand.transform;
@@ -76,9 +97,72 @@ public class Weapon : MonoBehaviour
                     transform.localPosition = new Vector3(-0.0001f, 0.000150000007f, 0);
                     transform.localRotation = new Quaternion(0, 0, 0.707106829f, 0.707106829f);
 
-                    available = false;
+                    dropped = false;
+
+                    player.GetComponent<Character>().rightHandWeapon = this.gameObject;
                 }
             }
+        }
+    }
+
+    public bool Pickable
+    {
+        get { return dropped == true && Time.realtimeSinceStartup > nextPickTime; }
+    }
+
+    public bool tryAttachWeapon(GameObject character)
+    {
+        if (Pickable)
+        {
+            Character player = character.GetComponentsInParent<Character>()[0];
+
+            if (player.rightHandWeapon == null && player.RightHand)
+            {
+                owner = character;
+
+                transform.parent = player.RightHand.transform;
+
+                transform.localPosition = new Vector3(-0.0001f, 0.000150000007f, 0);
+                transform.localRotation = new Quaternion(0, 0, 0.707106829f, 0.707106829f);
+
+                dropped = false;
+
+                player.RightHandWeapon = this.gameObject;
+
+                GetComponent<Rigidbody>().detectCollisions = false;
+                GetComponent<Rigidbody>().useGravity = false;
+
+                pickSound.Play();
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public void DetachWeapon()
+    {
+        dropped = true;
+        nextPickTime = Time.realtimeSinceStartup + this.timeBeforePick;
+
+        gameObject.transform.parent = null;
+
+        Character player = owner.GetComponentsInParent<Character>()[0];
+        player.RightHandWeapon = null;
+
+        var rb = GetComponent<Rigidbody>();
+        rb.detectCollisions = true;
+        rb.useGravity = true;
+
+        dropSound.Play();
+    }
+
+    void OnTriggerEnter(Collider col)
+    {
+        if (col.gameObject.tag == "Avatar")
+        {
+            tryAttachWeapon(col.gameObject);
         }
     }
 }

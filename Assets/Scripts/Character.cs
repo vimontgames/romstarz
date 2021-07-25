@@ -55,6 +55,7 @@ public class Character : MonoBehaviour
     private float currentCamHeight = 0.0f;
     private float waitUntil = 0.0f;
     private float lastSlashTime = 0.0f;
+    public GameObject rightHandWeapon;
 
     private Transform rightHand;
 
@@ -98,6 +99,12 @@ public class Character : MonoBehaviour
     public Transform RightHand
     {
         get { return rightHand; }
+    }
+
+    public GameObject RightHandWeapon
+    {
+        get { return rightHandWeapon; }
+        set { rightHandWeapon = value; }
     }
 
     void Start()
@@ -208,8 +215,11 @@ public class Character : MonoBehaviour
         AnimatorStateInfo info = Anim.GetCurrentAnimatorStateInfo(0);
         AnimatorClipInfo[] clips = Anim.GetCurrentAnimatorClipInfo(0);
 
-        hud.transform.Find("Debug").GetComponent<Text>().text = "State: " + state.ToString() + "\n";
-        hud.transform.Find("Debug").GetComponent<Text>().text+= "Anim: " + clips[0].clip.name + " " + info.normalizedTime.ToString() + "\n";
+        if (clips.Length > 0)
+        {
+            hud.transform.Find("Debug").GetComponent<Text>().text = "State: " + state.ToString() + "\n";
+            hud.transform.Find("Debug").GetComponent<Text>().text += "Anim: " + clips[0].clip.name + " " + info.normalizedTime.ToString() + "\n";
+        }
     }
 
     void Update()
@@ -234,7 +244,7 @@ public class Character : MonoBehaviour
         currentCamHeight = Mathf.Lerp(currentCamHeight, targetCamHeight, Mathf.Clamp01(Time.deltaTime));
         
         Vector2 leftStick = new Vector2(0,0), rightStick = new Vector2(0,0);
-        bool running = false, jumping = false, slash = false;
+        bool running = false, jumping = false, slash = false, drop = false;
 
         if (human)
         {
@@ -253,6 +263,7 @@ public class Character : MonoBehaviour
                 running = pad.buttonSouth.isPressed && grounded;
                 jumping = pad.buttonNorth.isPressed && grounded;
                 slash = pad.buttonEast.isPressed && grounded;
+                drop = rightHandWeapon != null && pad.dpad.y.ReadValue() < 0;
             }
         }
         else
@@ -295,6 +306,14 @@ public class Character : MonoBehaviour
             }
         }
 
+        if (drop)
+        {
+            if (rightHandWeapon)
+            {
+                rightHandWeapon.GetComponent<Weapon>().DetachWeapon();
+            }
+        }
+
         if (slash && state != State.Hit && (time - lastSlashTime) > 1.5f)
         {
             swish.PlayDelayed(0.4f);
@@ -306,7 +325,7 @@ public class Character : MonoBehaviour
         AnimatorClipInfo[] clips = Anim.GetCurrentAnimatorClipInfo(0);
 
         // Don't move while hitting
-        if (clips[0].clip.name == "Slash")
+        if (clips.Length > 0 && clips[0].clip.name == "Slash")
         {
             leftStick.Set(0, 0);
             velocity.Set(0, velocity.y, 0);
