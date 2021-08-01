@@ -5,6 +5,7 @@ using UnityEngine;
 [System.Serializable]
 public enum WeaponType
 {
+    Fists,
     Racket,
     Sword
 }
@@ -13,6 +14,7 @@ public class Weapon : MonoBehaviour
 {
     public WeaponType weaponType = WeaponType.Racket;
     public float timeBeforePick = 3.0f;
+    public GameObject projectilesPrefab;
 
     [Header("Sound")]
     public AudioSource pickSound;
@@ -21,6 +23,11 @@ public class Weapon : MonoBehaviour
     private bool dropped = true;
     private float nextPickTime = 0.0f;
     private GameObject owner = null;
+
+    public WeaponType WeapType
+    {
+        get { return weaponType; }
+    }
 
     // Start is called before the first frame update
     void Start()
@@ -82,24 +89,27 @@ public class Weapon : MonoBehaviour
 
     void OnCollisionEnter(Collision collision)
     {
-        foreach (ContactPoint contact in collision.contacts)
+        if (!Pickable)
         {
-            var obj = contact.otherCollider.gameObject;
-
-            if (obj.tag == "Avatar")
+            foreach (ContactPoint contact in collision.contacts)
             {
-                Character player = obj.GetComponentsInParent<Character>()[0];
+                var obj = contact.otherCollider.gameObject;
 
-                if (player.RightHand)
+                if (obj.tag == "Avatar")
                 {
-                    transform.parent = player.RightHand.transform;
+                    Character player = obj.GetComponentsInParent<Character>()[0];
 
-                    transform.localPosition = new Vector3(-0.0001f, 0.000150000007f, 0);
-                    transform.localRotation = new Quaternion(0, 0, 0.707106829f, 0.707106829f);
+                    if (player.RightHand)
+                    {
+                        transform.parent = player.RightHand.transform;
 
-                    dropped = false;
+                        transform.localPosition = new Vector3(-0.0001f, 0.000150000007f, 0);
+                        transform.localRotation = new Quaternion(0, 0, 0.707106829f, 0.707106829f);
 
-                    player.GetComponent<Character>().rightHandWeapon = this.gameObject;
+                        dropped = false;
+
+                        player.GetComponent<Character>().RightHandWeapon = this.gameObject;
+                    }
                 }
             }
         }
@@ -116,7 +126,7 @@ public class Weapon : MonoBehaviour
         {
             Character player = character.GetComponentsInParent<Character>()[0];
 
-            if (player.rightHandWeapon == null && player.RightHand)
+            if (player.RightHandWeapon == null && player.RightHand)
             {
                 owner = character;
 

@@ -9,18 +9,51 @@ using UnityEngine.SceneManagement;
 public class CharacterInfo
 {
     public string name;
+
+    [Header("Display")]
     public Texture face;
     public string model;
+
+    [Header("Sound")]
+    public AudioSource jump;
+    public AudioSource punch;
+    public AudioSource slash;
+    public AudioSource damage;
+    public AudioSource die;
 }
 
 [Serializable]
 public class WeaponInfo
 {
     public string name;
+
+    [Header("Gameplay")]
+    public ProjectileType projectile = ProjectileType.None;
+    public float rate = 2.0f;
+    public uint damage = 0;
+
+    [Header("Display")]
     public Texture icon;
     public string model;
     public string coloured;
     public List<Color> colors;
+
+    [Header("Sound")]
+    public float delay = 0.0f;
+}
+
+[Serializable]
+public class ProjectileInfo
+{
+    public string name;
+
+    [Header("Gameplay")]
+    public int damage = 1;
+    public float lifeTime = 8.0f;
+
+    [Header("Display")]
+    public Texture icon;
+    public string model;
 }
 
 public class Game : MonoBehaviour
@@ -29,6 +62,7 @@ public class Game : MonoBehaviour
     public bool paused = true;
     public CharacterInfo[] characters = new CharacterInfo[0];
     public WeaponInfo[] weapons = new WeaponInfo[0];
+    public ProjectileInfo[] projectiles = new ProjectileInfo[0];
     public GameObject player;
     public GameObject menu;
 
@@ -170,10 +204,10 @@ public class Game : MonoBehaviour
         }
 
         // AI players
-        GameObject E1 = Instantiate(player, new Vector3(-1, 0, 8), Quaternion.identity);
+        GameObject E1 = Instantiate(player, new Vector3(-2, 0, 8), Quaternion.identity);
         SetupAvatar(E1, 0xFF, 2);
 
-        GameObject E2 = Instantiate(player, new Vector3(+1, 0, 8), Quaternion.identity);
+        GameObject E2 = Instantiate(player, new Vector3(+2, 0, 8), Quaternion.identity);
         SetupAvatar(E2, 0xFF, 2);
 
         hideMenu();
