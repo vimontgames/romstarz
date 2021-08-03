@@ -231,14 +231,20 @@ public class Character : MonoBehaviour
         hud.transform.Find("Lifes").GetComponent<Text>().text = " x " + math.max(0,lifes).ToString();
         hud.transform.Find("Coins").GetComponent<Text>().text = " x " + coins.ToString();
 
-        AnimatorStateInfo info = Anim.GetCurrentAnimatorStateInfo(0);
-        AnimatorClipInfo[] clips = Anim.GetCurrentAnimatorClipInfo(0);
-
-        if (clips.Length > 0)
+        string dbgText = "";
+        if (Game.Instance.Debug)
         {
-            hud.transform.Find("Debug").GetComponent<Text>().text = "State: " + state.ToString() + "\n";
-            hud.transform.Find("Debug").GetComponent<Text>().text += "Anim: " + clips[0].clip.name + " " + info.normalizedTime.ToString() + "\n";
+            AnimatorStateInfo info = Anim.GetCurrentAnimatorStateInfo(0);
+            AnimatorClipInfo[] clips = Anim.GetCurrentAnimatorClipInfo(0);
+
+            if (clips.Length > 0)
+            {
+                dbgText = "State: " + state.ToString() + "\n";
+                dbgText += "Anim: " + clips[0].clip.name + " " + info.normalizedTime.ToString() + "\n";
+            }
         }
+  
+        hud.transform.Find("Debug").GetComponent<Text>().text = dbgText;
     }
 
     void UpdateStatus()
@@ -246,8 +252,14 @@ public class Character : MonoBehaviour
         statusBar.transform.position = Avatar.transform.position + new Vector3(0.0f, 2.5f, 0.0f);
         statusBar.transform.rotation = new Quaternion(0.5f, 0.0f, 0.0f, 0.9f); // Quaternion.LookRotation(this.playerCam.transform.position);
 
-        string text = health.ToString() + " HP" + "\n";
-               text += state.ToString();
+        string text;
+
+        text = health.ToString() + " HP" + "\n";
+
+        if (Game.Instance.Debug)
+        {
+            text += state.ToString();
+        }
 
         statusBar.transform.Find("HealthText").GetComponent<Text>().text = text;
     }

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
+using UnityEngine.InputSystem;
 
 [Serializable]
 public class CharacterInfo
@@ -58,8 +59,9 @@ public class ProjectileInfo
 
 public class Game : MonoBehaviour
 {
-    public float gravity = -9.81f;
+    public bool debug = false;
     public bool paused = true;
+    public float gravity = -9.81f;
     public CharacterInfo[] characters = new CharacterInfo[0];
     public WeaponInfo[] weapons = new WeaponInfo[0];
     public ProjectileInfo[] projectiles = new ProjectileInfo[0];
@@ -69,6 +71,11 @@ public class Game : MonoBehaviour
     private static Game instance;
     private GameObject mainMenu;
     private Transform players;
+
+    public bool Debug
+    {
+        get { return debug; }
+    }
 
     public static Game Instance
     {
@@ -216,7 +223,10 @@ public class Game : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        if (Keyboard.current.dKey.wasPressedThisFrame)
+        {
+            debug = !debug;
+        }
     }
 
     public void showMenu()
