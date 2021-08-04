@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.17276807, g: 0.21589197, b: 0.29782572, a: 1}
+  m_IndirectSpecularColor: {r: 0.172768, g: 0.21589167, b: 0.29782546, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -787,6 +787,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 41e76913929526848a73adfc4cd77558, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  menuCamera: {fileID: 105147721}
 --- !u!1 &930205857
 GameObject:
   m_ObjectHideFlags: 0
@@ -1467,8 +1468,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 673059a0cc7050649b40877b9efa1c1d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  gravity: -9.81
+  debug: 0
   paused: 1
+  gravity: -9.81
   characters:
   - name: "Rom\xE9o"
     face: {fileID: 2800000, guid: 9e00837adb585a44e876bc19dbedd4df, type: 3}

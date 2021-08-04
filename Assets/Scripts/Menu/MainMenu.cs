@@ -7,6 +7,7 @@ using UnityEngine.SceneManagement;
 
 public class MainMenu : MonoBehaviour
 {
+    public GameObject menuCamera;
     private uint playerCount = 0;
     private AsyncOperation loading;
     private Game game;
@@ -62,6 +63,7 @@ public class MainMenu : MonoBehaviour
 
     public void StartGame(uint _playerCount)
     {
-        game.NewGame(_playerCount);        
+        game.NewGame(_playerCount);
+        menuCamera.SetActive(false);
     }
 }

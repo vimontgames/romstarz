@@ -232,6 +232,7 @@ public class Game : MonoBehaviour
     public void showMenu()
     {
         mainMenu.SetActive(true);
+        mainMenu.GetComponent<MainMenu>().menuCamera.SetActive(true);
 
         var background = GameObject.Find("Background");
         if (background)
