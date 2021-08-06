@@ -14,6 +14,7 @@ public class Projectile : MonoBehaviour
     public ProjectileType projectileType;
     private float lastDamageTime = 0.0f;
     private GameObject lastDamagedObject = null;
+    public GameObject owner = null;
 
     public ProjectileInfo projInfo
     {
@@ -32,20 +33,28 @@ public class Projectile : MonoBehaviour
         
     }
 
+    void OnCollideOrTrigger(GameObject target)
+    {
+        Character character = target.GetComponent<Character>();
+
+        if (owner != target && (lastDamagedObject != target || Time.realtimeSinceStartup > lastDamageTime + 1.0f))
+        {
+            lastDamagedObject = target;
+            lastDamageTime = Time.realtimeSinceStartup;
+            character.takeHit(gameObject);
+        }
+    }
+
     void OnCollisionEnter(Collision collision)
     {
         if (collision.gameObject.tag == "Avatar")
-        {
-            GameObject target = collision.gameObject.transform.parent.gameObject;
-            Character character = target.GetComponent<Character>();
+            OnCollideOrTrigger(collision.gameObject.transform.parent.gameObject);
+    }
 
-            if (lastDamagedObject != target || Time.realtimeSinceStartup > lastDamageTime + 1.0f)
-            {
-                lastDamagedObject = target;
-                lastDamageTime = Time.realtimeSinceStartup;
-                character.takeHit(gameObject);
-            }
-        }
+    void OnTriggerEnter(Collider collider)
+    {
+        if (collider.gameObject.tag == "Avatar")
+            OnCollideOrTrigger(collider.gameObject.transform.parent.gameObject);
     }
 
     private IEnumerator DestroyProjectile(float delay)

@@ -50,7 +50,10 @@ public class ProjectileInfo
 
     [Header("Gameplay")]
     public int damage = 1;
+    public float force = 1.0f;
+    public float delay = 0.0f;
     public float lifeTime = 8.0f;
+    public float offset = 1.0f;
 
     [Header("Display")]
     public Texture icon;
@@ -67,6 +70,7 @@ public class Game : MonoBehaviour
     public ProjectileInfo[] projectiles = new ProjectileInfo[0];
     public GameObject player;
     public GameObject menu;
+    public GameObject projectilesPrefab;
 
     private static Game instance;
     private GameObject mainMenu;
@@ -214,8 +218,14 @@ public class Game : MonoBehaviour
         GameObject E1 = Instantiate(player, new Vector3(-2, 0, 8), Quaternion.identity);
         SetupAvatar(E1, 0xFF, 2);
 
-        GameObject E2 = Instantiate(player, new Vector3(+2, 0, 8), Quaternion.identity);
+        GameObject E2 = Instantiate(player, new Vector3(-1, 0, 8), Quaternion.identity);
         SetupAvatar(E2, 0xFF, 2);
+
+        GameObject E3 = Instantiate(player, new Vector3(+1, 0, 8), Quaternion.identity);
+        SetupAvatar(E3, 0xFF, 2);
+
+        GameObject E4 = Instantiate(player, new Vector3(+2, 0, 8), Quaternion.identity);
+        SetupAvatar(E4, 0xFF, 2);
 
         hideMenu();
     }
@@ -224,8 +234,19 @@ public class Game : MonoBehaviour
     void Update()
     {
         if (Keyboard.current.dKey.wasPressedThisFrame)
-        {
             debug = !debug;
+
+        if (Keyboard.current.kKey.wasPressedThisFrame)
+            killAllEnnemies();
+    }
+
+    private void killAllEnnemies()
+    {
+        var characters = GameObject.FindGameObjectsWithTag("Player");
+        foreach (var chara in characters)
+        {
+            if (!chara.GetComponent<Character>().Human)
+                Destroy(chara);
         }
     }
 

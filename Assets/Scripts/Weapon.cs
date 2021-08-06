@@ -14,7 +14,6 @@ public class Weapon : MonoBehaviour
 {
     public WeaponType weaponType = WeaponType.Racket;
     public float timeBeforePick = 3.0f;
-    public GameObject projectilesPrefab;
 
     [Header("Sound")]
     public AudioSource pickSound;

@@ -29,6 +29,8 @@ public class Character : MonoBehaviour
     public float friction = 3.5f;
     public float jumpHeight = 1.0f;
     public float health = 1000.0f;
+    public float recoveryPerSecond = 5;
+    private float startHealth;
     public float turbo = 100.0f;
     public int lifes = 3;
     public uint coins = 0;
@@ -50,6 +52,7 @@ public class Character : MonoBehaviour
     private GameObject hud;
     private Volume postProcess;
     private ColorAdjustments colorAdustments;
+    private Vignette vignette;
     private float targetCamHeight = 0.0f;
     private float currentCamHeight = 0.0f;
     private float waitUntil = 0.0f;
@@ -155,8 +158,10 @@ public class Character : MonoBehaviour
 
         characterController = avatar.GetComponent<CharacterController>();
 
-        lifes = 3;
+        lifes = Human ? 3 : 0;
         coins = 0;
+
+        startHealth = health;
 
         StartPostProcess();
         UpdateUIOnce();
@@ -175,44 +180,67 @@ public class Character : MonoBehaviour
 
     public void StartPostProcess()
     {
-        if (!human)
-            return;
-
-        // Match camera and postprocess layer
-        var layerName = "Player " + (padIndex+1).ToString();
-        var layerIndex = LayerMask.NameToLayer(layerName);
-
-        postprocess.gameObject.layer = layerIndex;
-        transform.Find("Camera").GetComponent<UniversalAdditionalCameraData>().volumeLayerMask = 1 << layerIndex;
-
-        postProcess = postprocess.gameObject.GetComponent<Volume>();
-
-        for (int i = 0; i<postProcess.profile.components.Count; i++)
+        if (Human)
         {
-            switch(postProcess.profile.components[i].name)
-            {
-                case "ColorAdjustments(Clone)":
-                    colorAdustments = (ColorAdjustments) postProcess.profile.components[i];
-                    break;
-            }
-        }
+            // Match camera and postprocess layer
+            var layerName = "Player " + (padIndex + 1).ToString();
+            var layerIndex = LayerMask.NameToLayer(layerName);
 
-        colorAdustments.saturation.value = 0.0f;
+            postprocess.gameObject.layer = layerIndex;
+            transform.Find("Camera").GetComponent<UniversalAdditionalCameraData>().volumeLayerMask = 1 << layerIndex;
+
+            postProcess = postprocess.gameObject.GetComponent<Volume>();
+
+            for (int i = 0; i < postProcess.profile.components.Count; i++)
+            {
+                switch (postProcess.profile.components[i].name)
+                {
+                    case "ColorAdjustments(Clone)":
+                        colorAdustments = (ColorAdjustments)postProcess.profile.components[i];
+                        break;
+
+                    case "Vignette(Clone)":
+                        vignette = (Vignette)postProcess.profile.components[i];
+                        break;
+                }
+            }
+
+            colorAdustments.saturation.value = 0.0f;
+            vignette.intensity.value = 0.0f;
+        }
+    }
+
+    public void Respawn()
+    {
+        avatar.transform.position = start;
+        health = 1000;
+        state = State.Idle;
     }
 
     public void Die()
     {
         lifes--;
 
-        Debug.Log("Player " + padIndex.ToString() + " die. " + lifes.ToString() + " remaining");
+        Debug.Log("Character " + padIndex.ToString() + " die. " + lifes.ToString() + " remaining");
+
+        state = State.Die;
+
+        if (CharInfo.die != null)
+            CharInfo.die.Play();
 
         if (lifes >= 0)
         {
-            avatar.transform.position = start;
+            lastDamageTime = Time.realtimeSinceStartup;
         }
         else
         {
-            colorAdustments.saturation.value = -100.0f;
+            characterController.enabled = false;
+
+            if (Human)
+            {
+                Avatar.SetActive(false);
+                colorAdustments.saturation.value = -100.0f;
+            }
         }
     }
 
@@ -247,14 +275,25 @@ public class Character : MonoBehaviour
         hud.transform.Find("Debug").GetComponent<Text>().text = dbgText;
     }
 
+    void UpdatePostProcess()
+    {
+        if (Human)
+        {
+            if (state == State.Die || ( lastDamageTime >0.0f && Time.realtimeSinceStartup < lastDamageTime + 2.0f))
+                vignette.intensity.value = 0.31f;
+            else
+                vignette.intensity.value = 0.0f;
+        }
+    }
+
     void UpdateStatus()
     {
         statusBar.transform.position = Avatar.transform.position + new Vector3(0.0f, 2.5f, 0.0f);
         statusBar.transform.rotation = new Quaternion(0.5f, 0.0f, 0.0f, 0.9f); // Quaternion.LookRotation(this.playerCam.transform.position);
 
         string text;
-
-        text = health.ToString() + " HP" + "\n";
+        int healthInt = (int)health;
+        text = healthInt.ToString() + " HP" + "\n";
 
         if (Game.Instance.Debug)
         {
@@ -270,6 +309,11 @@ public class Character : MonoBehaviour
 
         if (game.paused)
             return;
+
+        if (Human && state != State.Die)
+        {
+            health = Mathf.Min(startHealth, health + Time.deltaTime * recoveryPerSecond);
+        }
 
         UpdateStatus();
 
@@ -289,7 +333,7 @@ public class Character : MonoBehaviour
         
         Vector2 leftStick = new Vector2(0,0), rightStick = new Vector2(0,0);
         bool running = false, jumping = false, fire = false, drop = false;
-
+        
         if (human)
         {
             var pads = Gamepad.all;
@@ -347,7 +391,27 @@ public class Character : MonoBehaviour
                 leftStick.y = delta.z;
 
                 leftStick.Normalize();
+
+                float shootDist;
+                if (RightHandWeapon == null)
+                    shootDist = 2.0f;
+                else
+                    shootDist = 10.0f;
+
+                if (minDist < shootDist && character.health > 0)
+                {
+                    fire = true;
+                    //waitUntil = Time.realtimeSinceStartup + UnityEngine.Random.Range(3.0f, 5.0f);
+                }
             }
+        }
+
+        if (state == State.Die)
+        {
+            running = false;
+            jumping = false;
+            fire = false;
+            drop = rightHandWeapon != null;
         }
 
         if (drop)
@@ -363,11 +427,13 @@ public class Character : MonoBehaviour
             switch (CurWeaponType)
             {
                 case WeaponType.Fists:
-                    CharInfo.punch.PlayDelayed(WeapInfo.delay);
+                    if (CharInfo.punch != null)
+                        CharInfo.punch.PlayDelayed(WeapInfo.delay);
                     break;
 
                 case WeaponType.Racket:
-                    CharInfo.slash.PlayDelayed(WeapInfo.delay);
+                    if (CharInfo.slash != null)
+                        CharInfo.slash.PlayDelayed(WeapInfo.delay);
                     break;
             }
             lastFireTime = time;
@@ -398,21 +464,28 @@ public class Character : MonoBehaviour
                 }
             }
 
+            GameObject projPrefab = Game.Instance.projectilesPrefab; ;
+
             if (RightHandWeapon)
             {
-                var projPrefab = rightHandWeapon.GetComponent<Weapon>().projectilesPrefab;
-                float err = 0.05f;
-                Vector3 shootDir = new Vector3(lastNormalizedDir.x + UnityEngine.Random.Range(-err, err), 0.0f, lastNormalizedDir.z + UnityEngine.Random.Range(-err, err)).normalized;
-                StartCoroutine(SendProjectile(projPrefab, WeapInfo.projectile, 0.75f, shootDir));
-
-                avatar.transform.rotation = Quaternion.LookRotation(lastNormalizedDir);
-
                 state = State.Slash;
             }
             else
             {
                 state = State.Punch;
             }
+
+            float err = 0.05f;
+            Vector3 shootDir = new Vector3(lastNormalizedDir.x + UnityEngine.Random.Range(-err, err), 0.0f, lastNormalizedDir.z + UnityEngine.Random.Range(-err, err)).normalized;
+            StartCoroutine(SendProjectile(projPrefab, WeapInfo.projectile, shootDir));
+
+            avatar.transform.rotation = Quaternion.LookRotation(lastNormalizedDir);
+        }
+
+        if (state == State.Die && lifes >= 0 && Time.realtimeSinceStartup > lastDamageTime + 4.0f)
+        {
+            Respawn();
+            return;
         }
 
         AnimatorStateInfo info = Anim.GetCurrentAnimatorStateInfo(0);
@@ -421,8 +494,8 @@ public class Character : MonoBehaviour
         bool canMove;
         switch (state)
         {
-            case State.Slash:
-            case State.Punch:
+            //case State.Slash:
+            //case State.Punch:
             case State.Damage:
             case State.Die:
                 canMove = false;
@@ -483,12 +556,19 @@ public class Character : MonoBehaviour
 
         velocity.y += game.gravity * Time.deltaTime;
 
-        CollisionFlags collFlags = characterController.Move((direction * leftStick.magnitude + velocity) * Time.deltaTime);
+        CollisionFlags collFlags = CollisionFlags.None;
+        if (characterController.enabled)
+            collFlags = characterController.Move((direction * leftStick.magnitude + velocity) * Time.deltaTime);
 
         if (0 != (collFlags & CollisionFlags.Sides))
         {
             velocity.x = 0;
             velocity.z = 0;
+
+            leftStick.x = 0;
+            leftStick.y = 0;
+
+            waitUntil = Time.realtimeSinceStartup + UnityEngine.Random.Range(1.0f, 2.0f);
         }
 
         if (state == State.Slash || state == State.Punch)
@@ -502,13 +582,13 @@ public class Character : MonoBehaviour
 
         if (state == State.Idle)
         {
-            if (Mathf.Abs(velocity.x) > 0.01f || Mathf.Abs(velocity.z) > 0.01f)
+            if (Mathf.Abs(velocity.x) > 0.001f || Mathf.Abs(velocity.z) > 0.001f)
                 state = State.Walk;
         }
 
         if (state == State.Walk)
         {
-            if (Mathf.Abs(velocity.x) < 0.01f && Mathf.Abs(velocity.z) < 0.01f)
+            if (Mathf.Abs(velocity.x) < 0.001f && Mathf.Abs(velocity.z) < 0.001f)
                 state = State.Idle;
         }
 
@@ -537,11 +617,25 @@ public class Character : MonoBehaviour
                 Die();
         }
 
-        currentSpeed = Mathf.Sqrt(velocity.x*velocity.x + velocity.z * velocity.z);
+        currentSpeed = leftStick.magnitude;
 
         if (Anim)
         {
-            Anim.SetFloat("Speed", currentSpeed);
+            switch (state)
+            {
+                default:
+                    Anim.SetLayerWeight(1, 0.0f);
+                    break;
+
+                case State.Idle:
+                case State.Punch:
+                case State.Slash:
+                    Anim.SetLayerWeight(1, 1.0f);
+                    break;
+
+            }
+
+            Anim.SetFloat("Speed", state == State.Idle ? 0.0f : currentSpeed);
             Anim.SetBool("Slash", state == State.Slash);
             Anim.SetBool("Punch", state == State.Punch);
             Anim.SetBool("Damage", state == State.Damage);
@@ -553,6 +647,8 @@ public class Character : MonoBehaviour
             UpdateUI();
         }
 
+        UpdatePostProcess();
+
         Debug.DrawLine(Avatar.transform.position, Avatar.transform.position + direction.normalized);
     }
 
@@ -561,14 +657,20 @@ public class Character : MonoBehaviour
         coins += _count;
     }
 
-    private IEnumerator SendProjectile(GameObject projPrefab, ProjectileType projType, float delay, Vector3 dir)
+    private IEnumerator SendProjectile(GameObject projPrefab, ProjectileType projType, Vector3 dir)
     {
-        yield return new WaitForSeconds(delay);
+        ProjectileInfo projInfo = Game.Instance.projectiles[(int)projType];
 
-        GameObject proj = Instantiate(projPrefab, Avatar.transform.position + dir + new Vector3(0, 1.25f, 0), Quaternion.identity);
+        yield return new WaitForSeconds(projInfo.delay);
+        
+        GameObject projModel = projPrefab.transform.Find(projInfo.model).gameObject;
 
-        proj.GetComponentInChildren<Projectile>().projectileType = projType;
-        proj.transform.Find("Tennis").GetComponent<Rigidbody>().AddForce(dir * 1.75f, ForceMode.Impulse);
+        GameObject projObj = Instantiate(projModel, Avatar.transform.position + dir * projInfo.offset + new Vector3(0,1.25f, 0), Quaternion.identity);
+        Projectile proj = projObj.GetComponentInChildren<Projectile>();
+        proj.projectileType = projType;
+        proj.owner = gameObject;
+
+        projObj.GetComponent<Rigidbody>().AddForce(dir * projInfo.force, ForceMode.Impulse);
     }
 
     public void takeHit(GameObject from)
@@ -576,20 +678,26 @@ public class Character : MonoBehaviour
         if (state == State.Die)
             return;
 
+        int damage = 0;
+
         var projectile = from.GetComponent<Projectile>();
-        int damage = projectile.projInfo.damage;
+        if (projectile != null)
+            damage = projectile.projInfo.damage;
+
+        var chara = from.GetComponent<Character>();
+        if (chara != null)
+            damage = (int)chara.WeapInfo.damage;
+
         this.health -= damage;
 
-        //Avatar.GetComponent<CharacterController>().AddForce((transform.position - from.transform.position).normalized, ForceMode.Impulse);
+        //characterController.AddForce((transform.position - from.transform.position).normalized, ForceMode.Impulse);
 
         AudioSource sound = null;
 
         if (health <= 0)
         {
             health = 0;
-            state = State.Die;
-            sound = CharInfo.die;
-            Avatar.GetComponent<CharacterController>().enabled = false;
+            Die();   
         }
         else
         {
