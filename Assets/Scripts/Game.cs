@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.InputSystem;
+using Unity.Assertions;
 
 [Serializable]
 public class CharacterInfo
@@ -172,60 +173,63 @@ public class Game : MonoBehaviour
         var players = GameObject.FindGameObjectsWithTag("Player");
 
         foreach (var player in players)
-        {
             Destroy(player);
-        }
 
-        switch (_playerCount)
+        // Spawn characters at character spawn points
+        var spawns = GameObject.FindGameObjectsWithTag("Respawn");
+        uint curPlayerIndex = 0;
+        foreach (var spawn in spawns)
         {
-            case 1:
-                {
-                    // Human players
-                    GameObject P1 = Instantiate(player, new Vector3(0.0f, 0.0f, -8.0f), Quaternion.identity);
+            SpawnPoint sp = spawn.GetComponent<SpawnPoint>();
+            if (sp)
+            {
+                switch(sp.spawnType)
+                { 
+                    case SpawnType.Zombie:
+                        GameObject go = Instantiate(player, spawn.transform.position, spawn.transform.rotation);
+                        SetupAvatar(go, 0xFF, 2);
+                        break;
 
-                    SetupAvatar(P1, 0, 0);
+                    case SpawnType.Player:
+                        if (curPlayerIndex < _playerCount)
+                        {
+                            GameObject P = Instantiate(player, spawn.transform.position, spawn.transform.rotation);
+                            SetupAvatar(P, curPlayerIndex, curPlayerIndex);
 
-                    Camera C1 = P1.GetComponentInChildren<Camera>();
-                    C1.rect = new Rect(new Vector2(0, 0.0f), new Vector2(1.0f, 1.0f));
+                            switch (_playerCount)
+                            {
+                                case 1:
+                                    Camera C1 = P.GetComponentInChildren<Camera>();
+                                    C1.rect = new Rect(new Vector2(0, 0.0f), new Vector2(1.0f, 1.0f));
+                                    break;
+
+                                case 2:
+                                    if (curPlayerIndex == 0)
+                                    {
+                                        Camera C = P.GetComponentInChildren<Camera>();
+                                        C.rect = new Rect(new Vector2(0, 0), new Vector2(0.5f, 1));
+                                    }
+                                    else if (curPlayerIndex == 1)
+                                    {
+                                        Camera C2 = P.GetComponentInChildren<Camera>();
+                                        C2.rect = new Rect(new Vector2(0.5f, 0), new Vector2(0.5f, 1));
+
+                                        GameObject M = P.transform.Find("Hud").transform.Find("Canvas").gameObject;
+                                        M.GetComponent<RectTransform>().anchoredPosition = new Vector2(960.0f, 0.0f);
+
+                                        P.GetComponentInChildren<AudioListener>().enabled = false;
+                                    }
+                                    break;
+                            }
+                            curPlayerIndex++;
+                        }
+
+                        break;
                 }
-                break;
-
-            case 2:
-                {
-                    GameObject P1 = Instantiate(player, new Vector3(-1.0f, 00.0f, -8.0f), Quaternion.identity);
-
-                    SetupAvatar(P1, 0, 0);
-
-                    Camera C1 = P1.GetComponentInChildren<Camera>();
-                    C1.rect = new Rect(new Vector2(0, 0), new Vector2(0.5f, 1));
-
-                    GameObject P2 = Instantiate(player, new Vector3(+1.0f, 0.0f, -8.0f), Quaternion.identity);
-
-                    SetupAvatar(P2, 1, 1);
-
-                    Camera C2 = P2.GetComponentInChildren<Camera>();
-                    C2.rect =  new Rect(new Vector2(0.5f, 0), new Vector2(0.5f, 1));
-
-                    GameObject M2 = P2.transform.Find("Hud").transform.Find("Canvas").gameObject;
-                    M2.GetComponent<RectTransform>().anchoredPosition = new Vector2(960.0f, 0.0f);
-
-                    P2.GetComponentInChildren<AudioListener>().enabled = false;
-                }
-                break;
+            }
         }
 
-        // AI players
-        GameObject E1 = Instantiate(player, new Vector3(-2, 0, 8), Quaternion.identity);
-        SetupAvatar(E1, 0xFF, 2);
-
-        GameObject E2 = Instantiate(player, new Vector3(-1, 0, 8), Quaternion.identity);
-        SetupAvatar(E2, 0xFF, 2);
-
-        GameObject E3 = Instantiate(player, new Vector3(+1, 0, 8), Quaternion.identity);
-        SetupAvatar(E3, 0xFF, 2);
-
-        GameObject E4 = Instantiate(player, new Vector3(+2, 0, 8), Quaternion.identity);
-        SetupAvatar(E4, 0xFF, 2);
+        Assert.IsTrue(curPlayerIndex == _playerCount, "Could only find start position for " + curPlayerIndex.ToString() + "/" + _playerCount.ToString() + " player(s)");
 
         hideMenu();
     }

@@ -279,8 +279,15 @@ public class Character : MonoBehaviour
     {
         if (Human)
         {
-            if (state == State.Die || ( lastDamageTime >0.0f && Time.realtimeSinceStartup < lastDamageTime + 2.0f))
-                vignette.intensity.value = 0.31f;
+            float intensity = 0.31f;
+            float damageDelay = 1.0f;
+
+            float t = Time.realtimeSinceStartup - lastDamageTime;
+
+            if (state == State.Die)
+                vignette.intensity.value = intensity;
+            else if (lastDamageTime > 0.0f && t < damageDelay)
+                vignette.intensity.value = intensity * Mathf.Cos(t * Mathf.PI / damageDelay);
             else
                 vignette.intensity.value = 0.0f;
         }
