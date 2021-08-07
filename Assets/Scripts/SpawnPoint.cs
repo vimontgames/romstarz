@@ -32,10 +32,15 @@ public class SpawnPoint : MonoBehaviour
 
     public bool IsPrefab
     {
+        #if UNITY_EDITOR
         get { return PrefabUtility.GetPrefabParent(gameObject) == null && PrefabUtility.GetPrefabObject(gameObject) != null; }
+        #else
+        get { return false; }
+        #endif
     }
-    
+
     // Change color according to spawn type
+#if UNITY_EDITOR
     void OnValidate()
     {
         if (IsPrefab || Application.isPlaying)
@@ -87,4 +92,5 @@ public class SpawnPoint : MonoBehaviour
             }
         }
     }
+#endif
 }

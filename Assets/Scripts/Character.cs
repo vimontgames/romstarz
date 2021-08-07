@@ -64,6 +64,7 @@ public class Character : MonoBehaviour
     private Transform rightHand;
     private Vector2 camLimitsZ = new Vector2(-2.0f, 1.5f);
     private float lastDamageTime = 0.0f;
+    private Image healthBarImg;
 
     public void SetHuman(bool _isHuman)
     {
@@ -251,6 +252,8 @@ public class Character : MonoBehaviour
         hud.transform.Find("Name").GetComponent<Text>().text = game.characters[modelIndex].name;
         hud.transform.Find("Head").GetComponent<RawImage>().texture = game.characters[modelIndex].face;
 
+        healthBarImg = statusBar.transform.Find("HealthBar").GetComponent<Image>();
+
         UpdateUI();
     }
 
@@ -298,9 +301,11 @@ public class Character : MonoBehaviour
         statusBar.transform.position = Avatar.transform.position + new Vector3(0.0f, 2.5f, 0.0f);
         statusBar.transform.rotation = new Quaternion(0.5f, 0.0f, 0.0f, 0.9f); // Quaternion.LookRotation(this.playerCam.transform.position);
 
+        healthBarImg.fillAmount = health / startHealth;
+
         string text;
         int healthInt = (int)health;
-        text = healthInt.ToString() + " HP" + "\n";
+        text = healthInt.ToString() + "\n";
 
         if (Game.Instance.Debug)
         {
@@ -308,6 +313,11 @@ public class Character : MonoBehaviour
         }
 
         statusBar.transform.Find("HealthText").GetComponent<Text>().text = text;
+
+        if (health > 0)
+            statusBar.GetComponent<Canvas>().enabled = true;
+        else
+            statusBar.GetComponent<Canvas>().enabled = false;
     }
 
     void Update()
@@ -564,8 +574,11 @@ public class Character : MonoBehaviour
         velocity.y += game.gravity * Time.deltaTime;
 
         CollisionFlags collFlags = CollisionFlags.None;
+
+        Vector3 totalMove = direction * leftStick.magnitude + velocity;
+
         if (characterController.enabled)
-            collFlags = characterController.Move((direction * leftStick.magnitude + velocity) * Time.deltaTime);
+            collFlags = characterController.Move((totalMove) * Time.deltaTime);
 
         if (0 != (collFlags & CollisionFlags.Sides))
         {
@@ -589,13 +602,13 @@ public class Character : MonoBehaviour
 
         if (state == State.Idle)
         {
-            if (Mathf.Abs(velocity.x) > 0.001f || Mathf.Abs(velocity.z) > 0.001f)
+            if (Mathf.Abs(totalMove.x) > 0.001f || Mathf.Abs(totalMove.z) > 0.001f)
                 state = State.Walk;
         }
 
         if (state == State.Walk)
         {
-            if (Mathf.Abs(velocity.x) < 0.001f && Mathf.Abs(velocity.z) < 0.001f)
+            if (Mathf.Abs(totalMove.x) < 0.001f && Mathf.Abs(totalMove.z) < 0.001f)
                 state = State.Idle;
         }
 
@@ -624,7 +637,7 @@ public class Character : MonoBehaviour
                 Die();
         }
 
-        currentSpeed = leftStick.magnitude;
+        currentSpeed = Mathf.Sqrt(totalMove.x * totalMove.x + totalMove.z*totalMove.z);
 
         if (Anim)
         {
@@ -637,6 +650,7 @@ public class Character : MonoBehaviour
                 case State.Idle:
                 case State.Punch:
                 case State.Slash:
+                case State.Jump:
                     Anim.SetLayerWeight(1, 1.0f);
                     break;
 
