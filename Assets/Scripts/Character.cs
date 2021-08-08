@@ -177,6 +177,17 @@ public class Character : MonoBehaviour
                                    .Find("mixamorig:RightArm")
                                    .Find("mixamorig:RightForeArm")
                                    .Find("mixamorig:RightHand");
+
+        DetectJoystickType();
+    }
+
+    void DetectJoystickType()
+    {
+        if (padIndex < Gamepad.all.Count)
+        {
+            var pad = Gamepad.all[(int)padIndex];
+            string name = pad.name;
+        }
     }
 
     public void StartPostProcess()
@@ -220,9 +231,10 @@ public class Character : MonoBehaviour
 
     public void Die()
     {
+        health = 0;
         lifes--;
 
-        Debug.Log("Character " + padIndex.ToString() + " die. " + lifes.ToString() + " remaining");
+        Debug.Log("Character " + padIndex.ToString() + " dies. " + lifes.ToString() + " remaining");
 
         state = State.Die;
 
@@ -656,8 +668,13 @@ public class Character : MonoBehaviour
 
         if (!Dead)
         {
-            if (avatar.transform.position.y < -10)
+            if (avatar.transform.position.y < -16)
+            {
                 Die();
+
+                if (lifes >= 0)
+                    Respawn();
+            }
         }
 
         currentSpeed = Mathf.Sqrt(totalMove.x * totalMove.x + totalMove.z*totalMove.z);

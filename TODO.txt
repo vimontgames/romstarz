@@ -1,0 +1,1 @@
+[X] Chuter dans le vide fait passer direct à 0 vies
