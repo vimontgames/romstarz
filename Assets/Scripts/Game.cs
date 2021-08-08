@@ -88,7 +88,9 @@ public class Game : MonoBehaviour
         {
             if (instance == null)
             {
-                instance = GameObject.Find("Game").GetComponent<Game>();
+                var game = GameObject.Find("Game");
+                if (game != null)
+                    instance = game.GetComponent<Game>();
             }
 
             return instance;

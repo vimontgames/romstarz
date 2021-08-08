@@ -54,13 +54,13 @@ public class SpawnPoint : MonoBehaviour
                 {
                     UnityEditor.EditorApplication.delayCall += () =>
                     {
-                        if (child.gameObject != null)
+                        if (child != null && child.gameObject != null)
                             DestroyImmediate(child.gameObject);
                     };
                 }
             }
 
-            var mat = GetComponentInChildren<MeshRenderer>().material;
+            var mat = GetComponentInChildren<MeshRenderer>().sharedMaterial;
 
             GameObject model = null;
             Color color = new Color(0, 0, 0);
