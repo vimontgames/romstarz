@@ -349,27 +349,50 @@ public class Character : MonoBehaviour
         currentCamHeight = Mathf.Lerp(currentCamHeight, targetCamHeight, Mathf.Clamp01(Time.deltaTime));
         
         Vector2 leftStick = new Vector2(0,0), rightStick = new Vector2(0,0);
-        bool running = false, jumping = false, fire = false, drop = false;
+        bool running = false, jumping = false, fire = false, drop = false, start = false;
         
         if (human)
         {
             var pads = Gamepad.all;
+            bool canFire = grounded;
+            bool canDrop = rightHandWeapon != null;
 
             if (padIndex < pads.Count)
             {
                 var pad = pads[(int)padIndex];
 
-                if (pad.startButton.isPressed == true)
-                    game.showMenu();
-
+                start = pad.startButton.isPressed;
+                    
                 leftStick = pad.leftStick.ReadValue();
                 rightStick = pad.rightStick.ReadValue();
 
                 running = pad.buttonSouth.isPressed && grounded;
                 jumping = pad.buttonNorth.isPressed && grounded;
-                fire = pad.buttonEast.isPressed && grounded;
-                drop = rightHandWeapon != null && pad.dpad.y.ReadValue() < 0;
+                fire = pad.buttonEast.isPressed && canFire;
+                drop = canDrop && pad.dpad.y.ReadValue() < 0;
             }
+            else
+            {
+                // Emulate missing joystick with keyboard
+                if (padIndex == pads.Count)
+                {
+                    start = Keyboard.current.escapeKey.wasPressedThisFrame;
+
+                    leftStick.x = Keyboard.current.leftArrowKey.isPressed ? -1.0f : 0.0f;
+                    leftStick.x = Keyboard.current.rightArrowKey.isPressed ? +1.0f : leftStick.x;
+
+                    leftStick.y = Keyboard.current.upArrowKey.isPressed ? +1.0f : 0.0f;
+                    leftStick.y = Keyboard.current.downArrowKey.isPressed ? -1.0f : leftStick.y;
+
+                    running = Keyboard.current.sKey.isPressed && grounded;
+                    jumping = Keyboard.current.aKey.isPressed && grounded;
+                    fire = Keyboard.current.spaceKey.isPressed && canFire;
+                    drop = canDrop && Keyboard.current.dKey.isPressed;
+                }
+            }
+
+            if (start)
+                game.showMenu();
         }
         else
         {
