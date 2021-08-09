@@ -12,13 +12,20 @@ public enum ProjectileType
 public class Projectile : MonoBehaviour
 {
     public ProjectileType projectileType;
-    private float lastDamageTime = 0.0f;
-    private GameObject lastDamagedObject = null;
-    public GameObject owner = null;
+    public GameObject impact;
 
+    private float lastDamageTime = 0.0f;
+    private GameObject lastDamagedObject;
+    private GameObject owner;
+    
     public ProjectileInfo projInfo
     {
         get { return Game.Instance.projectiles[(int)projectileType]; }
+    }
+
+    public GameObject Owner
+    {
+        set { owner = value; }
     }
 
     // Start is called before the first frame update
@@ -33,28 +40,37 @@ public class Projectile : MonoBehaviour
         
     }
 
-    void OnCollideOrTrigger(GameObject target)
+    void OnCollideOrTrigger(GameObject target, Vector3 pos)
     {
         Character character = target.GetComponent<Character>();
+
+        if (character.IsBlinking)
+            return;
 
         if (owner != target && (lastDamagedObject != target || Time.realtimeSinceStartup > lastDamageTime + 1.0f))
         {
             lastDamagedObject = target;
             lastDamageTime = Time.realtimeSinceStartup;
-            character.takeHit(gameObject);
+            int damage = character.takeHit(gameObject);
+
+            if (impact)
+            {
+                GameObject imp = Instantiate(impact, pos + new Vector3(0,0,-0.25f), new Quaternion(0.5f, 0.0f, 0.0f, 0.9f));
+                imp.GetComponent<Impact>().DamageAmount = damage;
+            }
         }
     }
 
     void OnCollisionEnter(Collision collision)
     {
         if (collision.gameObject.tag == "Avatar")
-            OnCollideOrTrigger(collision.gameObject.transform.parent.gameObject);
+            OnCollideOrTrigger(collision.gameObject.transform.parent.gameObject, collision.GetContact(0).point);
     }
 
     void OnTriggerEnter(Collider collider)
     {
         if (collider.gameObject.tag == "Avatar")
-            OnCollideOrTrigger(collider.gameObject.transform.parent.gameObject);
+            OnCollideOrTrigger(collider.gameObject.transform.parent.gameObject, collider.bounds.center);
     }
 
     private IEnumerator DestroyProjectile(float delay)

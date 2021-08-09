@@ -47,7 +47,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   projectileType: 0
-  owner: {fileID: 0}
+  impact: {fileID: 6434881254050384286, guid: 973130c4e6c1fea4b930cb1834da040f, type: 3}
 --- !u!135 &1342135406541152404
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -156,7 +156,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   projectileType: 0
-  owner: {fileID: 0}
+  impact: {fileID: 6434881254050384286, guid: 973130c4e6c1fea4b930cb1834da040f, type: 3}
 --- !u!135 &1684227303278837402
 SphereCollider:
   m_ObjectHideFlags: 0

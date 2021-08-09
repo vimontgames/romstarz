@@ -65,6 +65,9 @@ public class Character : MonoBehaviour
     private Vector2 camLimitsZ = new Vector2(-2.0f, 1.5f);
     private float lastDamageTime = 0.0f;
     private Image healthBarImg;
+    private Vector3 previousPos = new Vector3(0, 0, 0);
+    private bool moving = false;
+    private float lastRespawnTime = 0.0f;
 
     public void SetHuman(bool _isHuman)
     {
@@ -130,6 +133,8 @@ public class Character : MonoBehaviour
 
     void Start()
     {
+        previousPos = transform.position;
+
         avatar = transform.Find("Avatar").gameObject;
         start = avatar.transform.position;
 
@@ -227,6 +232,7 @@ public class Character : MonoBehaviour
         avatar.transform.position = start;
         health = 1000;
         state = State.Idle;
+        lastRespawnTime = Time.realtimeSinceStartup;
     }
 
     public void Die()
@@ -332,12 +338,34 @@ public class Character : MonoBehaviour
             statusBar.GetComponent<Canvas>().enabled = false;
     }
 
+    public bool IsBlinking
+    {
+        get { return lastRespawnTime != 0.0f && Time.realtimeSinceStartup < lastRespawnTime + 2.0f; }
+    }
+
+    void Blink()
+    {
+        if (IsBlinking)
+        {
+            float blinkingTime = Time.realtimeSinceStartup - lastRespawnTime;
+            Model.SetActive(((int)(blinkingTime * 15.0f) & 1) == 1 ? true : false);
+        }
+        else
+            Model.SetActive(true);
+    }
+
     void Update()
     {
         Game game = Game.Instance;
 
         if (game.paused)
             return;
+
+        Blink();
+
+        moving = (Avatar.transform.position - previousPos).magnitude > 1.0f * Time.deltaTime;
+
+        previousPos = Avatar.transform.position;
 
         if (Human && state != State.Die)
         {
@@ -696,7 +724,7 @@ public class Character : MonoBehaviour
 
             }
 
-            Anim.SetFloat("Speed", state == State.Idle ? 0.0f : currentSpeed);
+            Anim.SetFloat("Speed", state == State.Idle || !moving ? 0.0f : currentSpeed);
             Anim.SetBool("Slash", state == State.Slash);
             Anim.SetBool("Punch", state == State.Punch);
             Anim.SetBool("Damage", state == State.Damage);
@@ -729,15 +757,15 @@ public class Character : MonoBehaviour
         GameObject projObj = Instantiate(projModel, Avatar.transform.position + dir * projInfo.offset + new Vector3(0,1.25f, 0), Quaternion.identity);
         Projectile proj = projObj.GetComponentInChildren<Projectile>();
         proj.projectileType = projType;
-        proj.owner = gameObject;
+        proj.Owner = gameObject;
 
         projObj.GetComponent<Rigidbody>().AddForce(dir * projInfo.force, ForceMode.Impulse);
     }
 
-    public void takeHit(GameObject from)
+    public int takeHit(GameObject from)
     {
         if (state == State.Die)
-            return;
+            return 0;
 
         int damage = 0;
 
@@ -770,5 +798,7 @@ public class Character : MonoBehaviour
             sound.Play();
 
         lastDamageTime = Time.realtimeSinceStartup;
+
+        return damage;
     }
 }
