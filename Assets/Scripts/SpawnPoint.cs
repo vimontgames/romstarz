@@ -7,13 +7,15 @@ public enum SpawnType
 {
     None,
     Zombie,
-    Player
+    Player,
+    Racket
 };
 
-public class SpawnPoint : MonoBehaviour
+public class SpawnPoint : CustomPrefab
 {
     public SpawnType spawnType = SpawnType.None;
     public GameObject characters;
+    public GameObject weapons;
 
     // Start is called before the first frame update
     void Start()
@@ -29,16 +31,7 @@ public class SpawnPoint : MonoBehaviour
     {
        
     }
-
-    public bool IsPrefab
-    {
-        #if UNITY_EDITOR
-        get { return PrefabUtility.GetPrefabParent(gameObject) == null && PrefabUtility.GetPrefabObject(gameObject) != null; }
-        #else
-        get { return false; }
-        #endif
-    }
-
+    
     // Change color according to spawn type
 #if UNITY_EDITOR
     void OnValidate()
@@ -60,10 +53,12 @@ public class SpawnPoint : MonoBehaviour
                 }
             }
 
-            var mat = GetComponentInChildren<MeshRenderer>().sharedMaterial;
+            var mat = GetComponentInChildren<MeshRenderer>().material;
 
             GameObject model = null;
             Color color = new Color(0, 0, 0);
+            float scale = 1.0f;
+            float verticalOffset = 0.0f;
 
             switch (spawnType)
             {
@@ -73,11 +68,19 @@ public class SpawnPoint : MonoBehaviour
                 case SpawnType.Player:
                     color = new Color(1, 0, 0);
                     model = characters.transform.Find("Avatar").transform.Find("Pablo").gameObject;
+                    scale = 3;
                     break;
 
                 case SpawnType.Zombie:
                     color = new Color(0, 1, 0);
                     model = characters.transform.Find("Avatar").transform.Find("Zombie").gameObject;
+                    scale = 3;
+                    break;
+
+                case SpawnType.Racket:
+                    color = new Color(1.0f, 0.5f, 0);
+                    model = weapons.transform.Find("Racket").gameObject;
+                    verticalOffset = 0.5f;
                     break;
             }
 
@@ -87,8 +90,8 @@ public class SpawnPoint : MonoBehaviour
             if (model != null)
             {
                 GameObject go = Instantiate(model, transform);
-                go.transform.localPosition = new Vector3(0, 0, 0);
-                go.transform.localScale = new Vector3(3, 3, 3);
+                go.transform.localPosition = new Vector3(0, verticalOffset, 0);
+                go.transform.localScale = new Vector3(scale, scale, scale);
             }
         }
     }

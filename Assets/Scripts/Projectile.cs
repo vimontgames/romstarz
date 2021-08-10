@@ -55,7 +55,7 @@ public class Projectile : MonoBehaviour
 
             if (impact)
             {
-                GameObject imp = Instantiate(impact, pos + new Vector3(0,0,-0.25f), new Quaternion(0.5f, 0.0f, 0.0f, 0.9f));
+                GameObject imp = Instantiate(impact, pos, new Quaternion(0.5f, 0.0f, 0.0f, 0.9f));
                 imp.GetComponent<Impact>().DamageAmount = damage;
             }
         }

@@ -544,7 +544,7 @@ public class Character : MonoBehaviour
                 }
             }
 
-            GameObject projPrefab = Game.Instance.projectilesPrefab; ;
+            GameObject projPrefab = Game.Instance.projectile; ;
 
             if (RightHandWeapon)
             {
@@ -759,7 +759,9 @@ public class Character : MonoBehaviour
         proj.projectileType = projType;
         proj.Owner = gameObject;
 
-        projObj.GetComponent<Rigidbody>().AddForce(dir * projInfo.force, ForceMode.Impulse);
+        float force = grounded ? projInfo.force : projInfo.forceJump;
+
+        projObj.GetComponent<Rigidbody>().AddForce(dir * force, ForceMode.Impulse);
     }
 
     public int takeHit(GameObject from)

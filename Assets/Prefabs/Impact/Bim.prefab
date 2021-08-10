@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 8656558432962394644}
   - component: {fileID: 3330056292650619024}
   - component: {fileID: 8000359168804854184}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: DamageText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -93,7 +93,7 @@ GameObject:
   - component: {fileID: 1585588516459927079}
   - component: {fileID: 8998287197210580315}
   - component: {fileID: 8616054454639269467}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -193,7 +193,7 @@ GameObject:
   - component: {fileID: 4871090679626005009}
   - component: {fileID: 765372798651517349}
   - component: {fileID: 6300858327586791374}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: DamageIcon
   m_TagString: Untagged
   m_Icon: {fileID: 0}

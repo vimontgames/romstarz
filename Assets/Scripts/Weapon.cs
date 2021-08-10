@@ -10,7 +10,7 @@ public enum WeaponType
     Sword
 }
 
-public class Weapon : MonoBehaviour
+public class Weapon : CustomPrefab
 {
     public WeaponType weaponType = WeaponType.Racket;
     public float timeBeforePick = 3.0f;
@@ -26,6 +26,7 @@ public class Weapon : MonoBehaviour
     public WeaponType WeapType
     {
         get { return weaponType; }
+        set { weaponType = value; }
     }
 
     // Start is called before the first frame update
@@ -64,26 +65,6 @@ public class Weapon : MonoBehaviour
     void Update()
     {
         
-    }
-
-    void OnValidate()
-    {
-        WeaponInfo info = null;
-        
-        if ((int)weaponType < Game.Instance.Weapons.Length)
-            info = Game.Instance.Weapons[(int)weaponType];
-
-        foreach (Transform child in transform)
-        {
-            if (info != null && child.gameObject.name == info.model)
-            {
-                child.gameObject.SetActive(true);
-            }
-            else
-            {
-                child.gameObject.SetActive(false);
-            }
-        }
     }
 
     void OnCollisionEnter(Collision collision)
@@ -174,4 +155,29 @@ public class Weapon : MonoBehaviour
             tryAttachWeapon(col.gameObject);
         }
     }
+
+#if UNITY_EDITOR
+    void OnValidate()
+    {
+        if (IsPrefab || Application.isPlaying)
+            return;
+
+        //WeaponInfo info = null;
+        //
+        //if ((int)weaponType < Game.Instance.Weapons.Length)
+        //    info = Game.Instance.Weapons[(int)weaponType];
+        //
+        //foreach (Transform child in transform)
+        //{
+        //    if (info != null && child.gameObject.name == info.model)
+        //    {
+        //        child.gameObject.SetActive(true);
+        //    }
+        //    else
+        //    {
+        //        child.gameObject.SetActive(false);
+        //    }
+        //}
+    }
+#endif
 }

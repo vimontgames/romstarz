@@ -52,6 +52,7 @@ public class ProjectileInfo
     [Header("Gameplay")]
     public int damage = 1;
     public float force = 1.0f;
+    public float forceJump = 1.0f;
     public float delay = 0.0f;
     public float lifeTime = 8.0f;
     public float offset = 1.0f;
@@ -69,9 +70,12 @@ public class Game : MonoBehaviour
     public CharacterInfo[] characters = new CharacterInfo[0];
     public WeaponInfo[] weapons = new WeaponInfo[0];
     public ProjectileInfo[] projectiles = new ProjectileInfo[0];
+
+    [Header("Prefabs")]
     public GameObject player;
     public GameObject menu;
-    public GameObject projectilesPrefab;
+    public GameObject projectile;
+    public GameObject weapon;
 
     private static Game instance;
     private GameObject mainMenu;
@@ -147,7 +151,6 @@ public class Game : MonoBehaviour
                     Destroy(otherModel.gameObject);
                 }
             }
-
         }
 
         switch (_padIndex)
@@ -177,6 +180,9 @@ public class Game : MonoBehaviour
         foreach (var player in players)
             Destroy(player);
 
+        // Random rotation
+        Quaternion randRot = Quaternion.Euler(1, 0, 0);
+
         // Spawn characters at character spawn points
         var spawns = GameObject.FindGameObjectsWithTag("Respawn");
         uint curPlayerIndex = 0;
@@ -186,7 +192,12 @@ public class Game : MonoBehaviour
             if (sp)
             {
                 switch(sp.spawnType)
-                { 
+                {
+                    case SpawnType.Racket:
+                        GameObject weap = Instantiate(weapon, spawn.transform.position, randRot);
+                        weap.GetComponent<Weapon>().WeapType = WeaponType.Racket;
+                        break;
+
                     case SpawnType.Zombie:
                         GameObject go = Instantiate(player, spawn.transform.position, spawn.transform.rotation);
                         SetupAvatar(go, 0xFF, 2);
@@ -198,23 +209,26 @@ public class Game : MonoBehaviour
                             GameObject P = Instantiate(player, spawn.transform.position, spawn.transform.rotation);
                             SetupAvatar(P, curPlayerIndex, curPlayerIndex);
 
+                            Camera cam = P.transform.Find("Camera").GetComponent<Camera>();
+                            Camera camUI = P.transform.Find("Camera").transform.Find("UICamera").GetComponent<Camera>();
+
                             switch (_playerCount)
                             {
                                 case 1:
-                                    Camera C1 = P.GetComponentInChildren<Camera>();
-                                    C1.rect = new Rect(new Vector2(0, 0.0f), new Vector2(1.0f, 1.0f));
+                                    cam.rect = new Rect(new Vector2(0, 0.0f), new Vector2(1.0f, 1.0f));
+                                    camUI.rect = cam.rect;
                                     break;
 
                                 case 2:
                                     if (curPlayerIndex == 0)
                                     {
-                                        Camera C = P.GetComponentInChildren<Camera>();
-                                        C.rect = new Rect(new Vector2(0, 0), new Vector2(0.5f, 1));
+                                        cam.rect = new Rect(new Vector2(0, 0), new Vector2(0.5f, 1));
+                                        camUI.rect = cam.rect;
                                     }
                                     else if (curPlayerIndex == 1)
                                     {
-                                        Camera C2 = P.GetComponentInChildren<Camera>();
-                                        C2.rect = new Rect(new Vector2(0.5f, 0), new Vector2(0.5f, 1));
+                                        cam.rect = new Rect(new Vector2(0.5f, 0), new Vector2(0.5f, 1));
+                                        camUI.rect = cam.rect;
 
                                         GameObject M = P.transform.Find("Hud").transform.Find("Canvas").gameObject;
                                         M.GetComponent<RectTransform>().anchoredPosition = new Vector2(960.0f, 0.0f);
