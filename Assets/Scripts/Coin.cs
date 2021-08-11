@@ -39,7 +39,11 @@ public class Coin : MonoBehaviour
                 Destroy(this.gameObject);
             }
         }
-            
+    }
+
+    public bool Visible
+    {
+        set { mesh.GetComponent<MeshRenderer>().enabled = value; }
     }
 
     void OnTriggerEnter(Collider col)
@@ -52,15 +56,18 @@ public class Coin : MonoBehaviour
             // Avatar collided but we want main player AI
             Character player = col.gameObject.GetComponentsInParent<Character>()[0];
 
-            player.AddCoin(1);
+            if (!player.Dead && player.CharState != Character.State.Die)
+            {
+                player.AddCoin(1);
 
-            particle.Play();
-            sound.Play();
+                particle.Play();
+                sound.Play();
 
-            mesh.GetComponent<MeshRenderer>().enabled = false;
+                Visible = false;
 
-            destroyTime = Time.realtimeSinceStartup + 5.0f;
-            destroying = true;
+                destroyTime = Time.realtimeSinceStartup + 5.0f;
+                destroying = true;
+            }
         }
     }
 }

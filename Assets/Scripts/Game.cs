@@ -76,6 +76,7 @@ public class Game : MonoBehaviour
     public GameObject menu;
     public GameObject projectile;
     public GameObject weapon;
+    public GameObject coin;
 
     private static Game instance;
     private GameObject mainMenu;

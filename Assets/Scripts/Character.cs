@@ -94,6 +94,11 @@ public class Character : MonoBehaviour
         get { return lifes < 0; }
     }
 
+    public Character.State CharState
+    {
+        get { return state; }
+    }
+
     public CharacterInfo CharInfo
     {
         get { return Game.Instance.Characters[modelIndex]; }
@@ -227,12 +232,16 @@ public class Character : MonoBehaviour
         }
     }
 
-    public void Respawn()
+    private IEnumerator Respawn(float delay)
     {
+        yield return new WaitForSeconds(delay);
+
         avatar.transform.position = start;
         health = 1000;
         state = State.Idle;
         lastRespawnTime = Time.realtimeSinceStartup;
+
+        coins = 0;
     }
 
     public void Die()
@@ -260,7 +269,28 @@ public class Character : MonoBehaviour
                 Avatar.SetActive(false);
                 colorAdustments.saturation.value = -100.0f;
             }
+
+            coins = 0;
         }
+
+        if (coins > 0)
+        {
+            for (int i = 0; i < coins; ++i)
+            {
+                Vector3 offset = new Vector3(UnityEngine.Random.Range(-1.0f, 1.0f), 0.5f, UnityEngine.Random.Range(-1.0f, 1.0f));
+                StartCoroutine(DropCoin(1.0f + 0.125f * (float)i, Avatar.transform.position + offset));
+            }
+        }
+    }
+
+    private IEnumerator DropCoin(float delay, Vector3 pos)
+    {
+        yield return new WaitForSeconds(delay);
+        
+        GameObject droppedCoin = Instantiate(Game.Instance.coin, pos, Quaternion.identity);
+        Coin coin = droppedCoin.GetComponentInChildren<Coin>();
+        coin.Visible = true;
+        coin.sound.Play();
     }
 
     void UpdateUIOnce()
@@ -556,7 +586,8 @@ public class Character : MonoBehaviour
             }
 
             float err = 0.05f;
-            Vector3 shootDir = new Vector3(lastNormalizedDir.x + UnityEngine.Random.Range(-err, err), 0.0f, lastNormalizedDir.z + UnityEngine.Random.Range(-err, err)).normalized;
+            float errY = 0.025f;
+            Vector3 shootDir = new Vector3(lastNormalizedDir.x + UnityEngine.Random.Range(-err, err), UnityEngine.Random.Range(-errY, errY), lastNormalizedDir.z + UnityEngine.Random.Range(-err, err)).normalized;
             StartCoroutine(SendProjectile(projPrefab, WeapInfo.projectile, shootDir));
 
             avatar.transform.rotation = Quaternion.LookRotation(lastNormalizedDir);
@@ -564,7 +595,7 @@ public class Character : MonoBehaviour
 
         if (state == State.Die && lifes >= 0 && Time.realtimeSinceStartup > lastDamageTime + 4.0f)
         {
-            Respawn();
+            StartCoroutine(Respawn(2.0f));
             return;
         }
 
@@ -701,7 +732,7 @@ public class Character : MonoBehaviour
                 Die();
 
                 if (lifes >= 0)
-                    Respawn();
+                    StartCoroutine(Respawn(1.0f));
             }
         }
 
@@ -754,7 +785,7 @@ public class Character : MonoBehaviour
         
         GameObject projModel = projPrefab.transform.Find(projInfo.model).gameObject;
 
-        GameObject projObj = Instantiate(projModel, Avatar.transform.position + dir * projInfo.offset + new Vector3(0,1.25f, 0), Quaternion.identity);
+        GameObject projObj = Instantiate(projModel, Avatar.transform.position + dir * projInfo.offset + new Vector3(0, grounded ? 1.25f : 1.5f, 0), Quaternion.identity);
         Projectile proj = projObj.GetComponentInChildren<Projectile>();
         proj.projectileType = projType;
         proj.Owner = gameObject;
