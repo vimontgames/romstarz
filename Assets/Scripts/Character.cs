@@ -17,6 +17,7 @@ public class Character : MonoBehaviour
         Jump,
         Slash,
         Punch,
+        Super,
         Damage,
         Die
     };
@@ -68,6 +69,8 @@ public class Character : MonoBehaviour
     private Vector3 previousPos = new Vector3(0, 0, 0);
     private bool moving = false;
     private float lastRespawnTime = 0.0f;
+    private float mana = 0;
+    private Image manaBarImg;
 
     public void SetHuman(bool _isHuman)
     {
@@ -92,6 +95,12 @@ public class Character : MonoBehaviour
     public bool Dead
     {
         get { return lifes < 0; }
+    }
+
+    public float Mana
+    {
+        get { return mana; }
+        set { mana = Mathf.Min(mana + value, 100); }
     }
 
     public Character.State CharState
@@ -301,6 +310,7 @@ public class Character : MonoBehaviour
         hud.transform.Find("Head").GetComponent<RawImage>().texture = game.characters[modelIndex].face;
 
         healthBarImg = statusBar.transform.Find("HealthBar").GetComponent<Image>();
+        manaBarImg = hud.transform.Find("headPower").GetComponent<Image>();
 
         UpdateUI();
     }
@@ -324,6 +334,13 @@ public class Character : MonoBehaviour
         }
   
         hud.transform.Find("Debug").GetComponent<Text>().text = dbgText;
+
+        manaBarImg.fillAmount = mana / 100.0f;
+
+        if (mana >= 100 && ((int)(Time.realtimeSinceStartup * 15.0f) & 1) == 1)
+            manaBarImg.color = new Color(1, 0.1f, 0.0f);
+        else
+            manaBarImg.color = new Color(0, 0.326f, 1.0f); 
     }
 
     void UpdatePostProcess()
@@ -419,7 +436,7 @@ public class Character : MonoBehaviour
         currentCamHeight = Mathf.Lerp(currentCamHeight, targetCamHeight, Mathf.Clamp01(Time.deltaTime));
         
         Vector2 leftStick = new Vector2(0,0), rightStick = new Vector2(0,0);
-        bool running = false, jumping = false, fire = false, drop = false, start = false;
+        bool running = false, jumping = false, fire = false, super = false, drop = false, start = false;
         
         if (human)
         {
@@ -439,6 +456,7 @@ public class Character : MonoBehaviour
                 running = pad.buttonSouth.isPressed && grounded;
                 jumping = pad.buttonNorth.isPressed && grounded;
                 fire = pad.buttonEast.isPressed && canFire;
+                super = pad.buttonWest.isPressed && canFire;
                 drop = canDrop && pad.dpad.y.ReadValue() < 0;
             }
             else
@@ -457,6 +475,7 @@ public class Character : MonoBehaviour
                     running = Keyboard.current.sKey.isPressed && grounded;
                     jumping = Keyboard.current.aKey.isPressed && grounded;
                     fire = Keyboard.current.spaceKey.isPressed && canFire;
+                    super = Keyboard.current.leftShiftKey.isPressed && canFire;
                     drop = canDrop && Keyboard.current.dKey.isPressed;
                 }
             }
@@ -521,6 +540,7 @@ public class Character : MonoBehaviour
             running = false;
             jumping = false;
             fire = false;
+            super = false;
             drop = rightHandWeapon != null;
         }
 
@@ -528,11 +548,11 @@ public class Character : MonoBehaviour
         {
             if (rightHandWeapon)
             {
-                rightHandWeapon.GetComponent<Weapon>().DetachWeapon();
+                rightHandWeapon.GetComponent<Weapon>().DetachWeapon(gameObject);
             }
         }
 
-        if (fire && state != State.Slash && state != State.Punch && (time - lastFireTime) > WeapInfo.rate)
+        if ((fire || super) && state != State.Slash && state != State.Punch && state != State.Super && (time - lastFireTime) > WeapInfo.rate)
         {
             switch (CurWeaponType)
             {
@@ -576,20 +596,43 @@ public class Character : MonoBehaviour
 
             GameObject projPrefab = Game.Instance.projectile; ;
 
-            if (RightHandWeapon)
+            float err = 0.05f;
+            float errY = 0.025f;
+
+            uint projCount = 1;
+
+            var projType = WeapInfo.projectile;
+
+            if (super)
             {
-                state = State.Slash;
+                if (Human && mana >= 100 && projType == ProjectileType.TennisBall)
+                {
+                    mana -= 100;
+                    projCount = 5;
+                    err *= 1.5f;
+                    errY *= 1.5f;
+                    projType = ProjectileType.SuperBall;
+
+                    state = State.Super;
+                }
+                else
+                {
+                    state = State.Idle;
+                }
             }
             else
             {
-                state = State.Punch;
+                state = RightHandWeapon ? State.Slash : State.Punch;
             }
 
-            float err = 0.05f;
-            float errY = 0.025f;
-            Vector3 shootDir = new Vector3(lastNormalizedDir.x + UnityEngine.Random.Range(-err, err), UnityEngine.Random.Range(-errY, errY), lastNormalizedDir.z + UnityEngine.Random.Range(-err, err)).normalized;
-            StartCoroutine(SendProjectile(projPrefab, WeapInfo.projectile, shootDir));
-
+            if (state != State.Idle)
+            {
+                for (int i = 0; i < projCount; ++i)
+                {
+                    Vector3 shootDir = new Vector3(lastNormalizedDir.x + UnityEngine.Random.Range(-err, err), UnityEngine.Random.Range(-errY, errY), lastNormalizedDir.z + UnityEngine.Random.Range(-err, err)).normalized;
+                    StartCoroutine(SendProjectile(projPrefab, projType, shootDir));
+                }
+            }
             avatar.transform.rotation = Quaternion.LookRotation(lastNormalizedDir);
         }
 
@@ -605,8 +648,6 @@ public class Character : MonoBehaviour
         bool canMove;
         switch (state)
         {
-            //case State.Slash:
-            //case State.Punch:
             case State.Damage:
             case State.Die:
                 canMove = false;
@@ -685,7 +726,7 @@ public class Character : MonoBehaviour
             waitUntil = Time.realtimeSinceStartup + UnityEngine.Random.Range(1.0f, 2.0f);
         }
 
-        if (state == State.Slash || state == State.Punch)
+        if (state == State.Slash || state == State.Punch || state == State.Super)
         {
             if ((time-lastFireTime) > 1.0f)
                 state = State.Idle;
@@ -709,7 +750,7 @@ public class Character : MonoBehaviour
         if (0 != (collFlags & CollisionFlags.Above))
             velocity.y = game.gravity * Time.deltaTime;
 
-        if (direction != Vector3.zero && state != State.Slash)
+        if (direction != Vector3.zero && state != State.Slash && state != State.Super)
         {
             lastNormalizedDir = direction.normalized;
             avatar.transform.rotation = Quaternion.LookRotation(lastNormalizedDir);
@@ -746,9 +787,9 @@ public class Character : MonoBehaviour
                     Anim.SetLayerWeight(1, 0.0f);
                     break;
 
-                case State.Idle:
                 case State.Punch:
                 case State.Slash:
+                case State.Super:
                 case State.Jump:
                     Anim.SetLayerWeight(1, 1.0f);
                     break;
@@ -756,7 +797,7 @@ public class Character : MonoBehaviour
             }
 
             Anim.SetFloat("Speed", state == State.Idle || !moving ? 0.0f : currentSpeed);
-            Anim.SetBool("Slash", state == State.Slash);
+            Anim.SetBool("Slash", state == State.Slash || state == State.Super);
             Anim.SetBool("Punch", state == State.Punch);
             Anim.SetBool("Damage", state == State.Damage);
             Anim.SetBool("Die", state == State.Die);
@@ -786,6 +827,7 @@ public class Character : MonoBehaviour
         GameObject projModel = projPrefab.transform.Find(projInfo.model).gameObject;
 
         GameObject projObj = Instantiate(projModel, Avatar.transform.position + dir * projInfo.offset + new Vector3(0, grounded ? 1.25f : 1.5f, 0), Quaternion.identity);
+
         Projectile proj = projObj.GetComponentInChildren<Projectile>();
         proj.projectileType = projType;
         proj.Owner = gameObject;
@@ -795,20 +837,19 @@ public class Character : MonoBehaviour
         projObj.GetComponent<Rigidbody>().AddForce(dir * force, ForceMode.Impulse);
     }
 
-    public int takeHit(GameObject from)
+    public int takeHit(GameObject proj, GameObject owner)
     {
         if (state == State.Die)
             return 0;
 
         int damage = 0;
 
-        var projectile = from.GetComponent<Projectile>();
+        var projectile = proj.GetComponent<Projectile>();
         if (projectile != null)
             damage = projectile.projInfo.damage;
 
-        var chara = from.GetComponent<Character>();
-        if (chara != null)
-            damage = (int)chara.WeapInfo.damage;
+        var chara = owner.GetComponent<Character>();
+        chara.Mana += 10;
 
         this.health -= damage;
 

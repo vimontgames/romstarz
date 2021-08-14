@@ -6,7 +6,8 @@ using UnityEngine;
 public enum ProjectileType
 {
     None,
-    TennisBall
+    TennisBall,
+    SuperBall
 };
 
 public class Projectile : MonoBehaviour
@@ -51,7 +52,7 @@ public class Projectile : MonoBehaviour
         {
             lastDamagedObject = target;
             lastDamageTime = Time.realtimeSinceStartup;
-            int damage = character.takeHit(gameObject);
+            int damage = character.takeHit(gameObject, owner);
 
             if (impact)
             {

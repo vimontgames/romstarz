@@ -131,14 +131,14 @@ public class Weapon : CustomPrefab
         return false;
     }
 
-    public void DetachWeapon()
+    public void DetachWeapon(GameObject from)
     {
         dropped = true;
         nextPickTime = Time.realtimeSinceStartup + this.timeBeforePick;
 
         gameObject.transform.parent = null;
 
-        Character player = owner.GetComponentsInParent<Character>()[0];
+        Character player = from.GetComponent<Character>();
         player.RightHandWeapon = null;
 
         var rb = GetComponent<Rigidbody>();

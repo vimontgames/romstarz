@@ -59,7 +59,9 @@ public class Coin : MonoBehaviour
             if (!player.Dead && player.CharState != Character.State.Die)
             {
                 player.AddCoin(1);
+                player.Mana += 5;
 
+                particle.gameObject.SetActive(true);
                 particle.Play();
                 sound.Play();
 

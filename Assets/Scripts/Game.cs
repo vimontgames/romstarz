@@ -169,6 +169,7 @@ public class Game : MonoBehaviour
         {
             avatar.transform.rotation = Quaternion.LookRotation(new Vector3(0, 0, -1));
             player.SetHuman(false);
+            Destroy(P.transform.Find("Hud").gameObject);
         }
         else
             player.SetHuman(true);
